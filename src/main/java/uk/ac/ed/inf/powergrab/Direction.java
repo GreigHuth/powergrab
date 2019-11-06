@@ -14,8 +14,8 @@ public enum Direction {
 	
 	 
 	// <direction>(width, height)
-	// the width is amount to add to the longitude to get the new position
-	// the height is the amount to add to the latitude to get the new position
+	
+	
 	N(0,  0.0003),
 	NNE(0.0003*cos(toRadians(67.5)) ,0.0003*sin(toRadians(67.5)) ),
 	NE(0.0003*cos(toRadians(45)) , 0.0003*sin(toRadians(45))),
@@ -36,8 +36,8 @@ public enum Direction {
 	NW(-0.0003*cos(toRadians(45)),0.0003*sin(toRadians(45))),
 	NNW(-0.0003*cos(toRadians(67.5)),0.0003*sin(toRadians(67.5)));
 	
-	private double w; 
-	private double h;
+	private double  w; // the width is added to the longitude to get the new position
+	private double  h; // the height is added to the latitude to get the new position
 	
 	Direction(double w, double h){
 		this.w = w;
@@ -46,16 +46,11 @@ public enum Direction {
 	
 	
 	public double getWidth() {
-		
 		return this.w;
-		
 	}
 	
 	public double getHeight(){
-		// the width is amount to add to the latitude to get the new position
-		
 		return this.h;
-		
 	}
 	
 }

@@ -5,14 +5,16 @@ public class Position {
 	public double longitude; // y coord
 	
 	public Position(double latitude, double longitude) { 
+		// constructor
 		this.latitude = latitude;
 		this.longitude = longitude;
 	}
 	
 	public Position nextPosition(Direction direction) { 
-		
+		//calculates the next position the drone moves to
 		Position nextPos = new Position(this.latitude, this.longitude);   
 		
+		//height and width refer to the sides of a triangle used to calculate the next position
 		nextPos.latitude  += direction.getHeight();
 		nextPos.longitude += direction.getWidth();
 		
@@ -24,20 +26,20 @@ public class Position {
 	
 	public boolean inPlayArea() { 
 
-		//the play area is a square so we only need the bottom left and top right points to verify-- 
-		//    --if a point is within the square or not
-		//bl = bottom left
-		//tr = top right
-		double bl_lat  = 55.942617;
-		double bl_long = -3.192473;
-		double tr_lat  = 55.946233;
-		double tr_long = -3.184319;
+		//the play area is a square so we only need the bottom-left and top-right points to verify 
+		//    if a point is within the square or not
+		//BL = bottom left
+		//TR = top right
+		final double BL_LAT  = 55.942617;
+		final double BL_LON = -3.192473;
+		final double TR_LAT  = 55.946233;
+		final double TR_LON = -3.184319;
 		
 		//new variables for the current position to make the algorithm more readable
         double lat = this.latitude;
         double lon = this.longitude;
 
-        if (lat > bl_lat && lat < tr_lat && lon > bl_long && lon < tr_long ){
+        if (lat > BL_LAT && lat < TR_LAT && lon > BL_LON && lon < TR_LON ){
             return true;
         } else{
             return false;
