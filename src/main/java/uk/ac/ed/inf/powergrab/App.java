@@ -36,7 +36,7 @@ public class App {
 		String mapSource = getMapSource(d,m,y);
 		System.out.println(mapSource);
 		
-		//start parsing the geojson
+		//start parsing the geo-json
 		FeatureCollection map = FeatureCollection.fromJson(mapSource);
 		
 		
