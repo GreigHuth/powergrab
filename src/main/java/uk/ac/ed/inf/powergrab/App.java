@@ -69,7 +69,7 @@ public class App {
 		ProgressBar pb = new ProgressBar("Running PowerGrab",100,ProgressBarStyle.ASCII).start();
 		
 		// main game loop
-		while (drone.getMoves() > 0) {	
+		while (drone.getMoves() > 0 && drone.getPower() > 0) {	
 			//ensure stateless and stateful drones have the same method names to make this code cleaner
 			
 			Position currPos = drone.getPos();
@@ -78,13 +78,18 @@ public class App {
 			//calculate and verify next move
 			//      updating power, coins and moves are dealt with in this method
 			
-			String dir = "placeholder";
+			String dir = "placeholder"; // direction the drone moves in
 			
 			
 			Position nextPos = drone.getPos(); //these will be different if all goes well :D
 			
 			//.txt output
-			txtOutput.add(Double.toString(currPos.latitude)+","+Double.toString(currPos.longitude)+","+dir+","+Double.toString(nextPos.latitude+","+Double.toString(nextPos.latitude));
+			txtOutput.add(
+					Double.toString(currPos.latitude)+","+Double.toString(currPos.longitude)+
+					","+dir+
+					","+Double.toString(nextPos.latitude)+","+Double.toString(nextPos.latitude)+
+					","+drone.getCoins()+
+					","+drone.getPower());
 			
 			//geo-json output
 			features.add(makeLine(currPos, nextPos));
