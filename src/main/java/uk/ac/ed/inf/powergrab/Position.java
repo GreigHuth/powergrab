@@ -10,6 +10,7 @@ public class Position {
 		this.longitude = longitude;
 	}
 	
+	//possibly rename
 	public Position nextPosition(Direction direction) { 
 		//calculates the next position the drone moves to
 		Position nextPos = new Position(this.latitude, this.longitude);   
