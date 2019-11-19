@@ -1,7 +1,15 @@
 package uk.ac.ed.inf.powergrab;
 
+import me.tongfei.progressbar.ProgressBar;
+import me.tongfei.progressbar.ProgressBarStyle;
+
 import java.io.*;
-import  java.net.*;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,13 +31,16 @@ public class App {
 	//3. Init drone (stateless or not stateless)[]
 	//4. start drone game loop[]
 	//5. run game[]
-	//6. build txt and geojson files with the data from the game
+	//6. build txt and geo-json files with the data from the game
 	//7. write them
 	//8. yaaay done
 	
 	
 	public static void main (String args[]) throws MalformedURLException, IOException {
-		// split arguments into own variables to aid readability
+		
+		System.out.println("Initialising powergrab...");
+		
+		// parse out arguments
 	    String d = args[0];
 	    String m = args[1];
 	    String y = args[2];
@@ -39,14 +50,23 @@ public class App {
 		int seed = Integer.parseInt(args[5]);
 		String version = args[6];
 		
-		String mapSource = getMapSource(d,m,y);
-		System.out.println(mapSource);
-		
-		
+		//get map data from web-server
+		String mapSource = getMapSource(d,m,y);	
 		FeatureCollection map = FeatureCollection.fromJson(mapSource);
 		List<Feature> features = map.features();
 		
+		//create output files
+		Path jsonFile = Paths.get(version+"-"+d+"-"+m+"-"+y+".geojson");
+		Path txtFile  = Paths.get(version+"-"+d+"-"+m+"-"+y+".txt");
+		
+		//prepare txt output container
+		List<String> txtOutput = new ArrayList<String>();
+		
+		// initialise drone to be stateless or stateful
 		Drone drone = initDrone(startPos, seed, version);
+		
+		//just some UI stuff to help usability and debugging
+		ProgressBar pb = new ProgressBar("Running PowerGrab",100,ProgressBarStyle.ASCII).start();
 		
 		// main game loop
 		while (drone.getMoves() > 0) {	
@@ -61,22 +81,49 @@ public class App {
 			
 			Position nextPos = drone.getPos(); //these will be different if all goes well :D
 			
-			List<Point> linePoints = new ArrayList<Point>(); //initialise structure to contain the points to draw the line on the geojson
-			linePoints.add(Point.fromLngLat(currPos.longitude, currPos.latitude));
-			linePoints.add(Point.fromLngLat(nextPos.longitude, nextPos.latitude));		
-			Feature newLine = Feature.fromGeometry(LineString.fromLngLats(linePoints));
-			features.add(newLine);
+			//.txt output
+			
+			
+			//geo-json output
+			features.add(makeLine(currPos, nextPos));
+			pb.step();
 			
 		}
 		
+		pb.stop();
 		
+		// turns features into a list of strings so it can be written to a file
+		List<String> featuresString = featureToString(features);	
+		Files.write(jsonFile, featuresString, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+		
+		
+		Files.write(txtFile,txtOutput, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
 		
 		
 		
 		
 	}
 	
-	// initialise drone to be stateless or stateful
+	public static Feature makeLine(Position currPos, Position nextPos) {
+		List<Point> linePoints = new ArrayList<Point>(); //initialise structure to contain the points to draw the line on the geojson
+		linePoints.add(Point.fromLngLat(currPos.longitude, currPos.latitude));
+		linePoints.add(Point.fromLngLat(nextPos.longitude, nextPos.latitude));		
+		Feature newLine = Feature.fromGeometry(LineString.fromLngLats(linePoints));
+		
+		return newLine;
+	}
+	
+	public static List<String> featureToString(List<Feature> features){
+		
+		List<String> featuresString = new ArrayList<String>(); 
+		for ( int i = 0; i < features.size(); i++){
+			featuresString.add(i,  features.get(i).toJson());
+		}
+		
+		return featuresString;
+	}
+	
+	
 	public static Drone initDrone(Position startPos, int seed, String version) {
 		Drone drone;
 		if (version == "stateless") { 
@@ -88,7 +135,6 @@ public class App {
 		return drone;
 	}
 	
-	//get the map from the webserver
 	public static String getMapSource(String d,String m, String y) throws MalformedURLException, IOException {
 	    String mapString = "http://www.homepages.inf.ed.ac.uk/stg/powergrab/"+y+"/"+m+"/"+d+"/powergrabmap.geojson";
         

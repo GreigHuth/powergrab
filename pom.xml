@@ -50,6 +50,12 @@
 	
   <dependencies>
   
+  	<dependency>
+      <groupId>me.tongfei</groupId>
+      <artifactId>progressbar</artifactId>
+      <version>0.7.4</version>
+    </dependency>
+  	
     <dependency>
       <groupId>com.mapbox.mapboxsdk</groupId>
       <artifactId>mapbox-sdk-geojson</artifactId>
