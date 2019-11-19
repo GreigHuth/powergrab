@@ -27,12 +27,12 @@ public class App {
 	
 	//------Basic TODO-------
 	//1. get json from webserver[x]
-	//2. parse it to get all the features into a data structure[]
-	//3. Init drone (stateless or not stateless)[]
-	//4. start drone game loop[]
+	//2. parse it to get all the features into a data structure[x]
+	//3. Init drone (stateless or not stateless)[x]
+	//4. start drone game loop[x]
 	//5. run game[]
-	//6. build txt and geo-json files with the data from the game
-	//7. write them
+	//6. build txt and geo-json files with the data from the game[x]
+	//7. write them[x]
 	//8. yaaay done
 	
 	
@@ -78,11 +78,13 @@ public class App {
 			//calculate and verify next move
 			//      updating power, coins and moves are dealt with in this method
 			
+			String dir = "placeholder";
+			
 			
 			Position nextPos = drone.getPos(); //these will be different if all goes well :D
 			
 			//.txt output
-			
+			txtOutput.add(Double.toString(currPos.latitude)+","+Double.toString(currPos.longitude)+","+dir+","+Double.toString(nextPos.latitude+","+Double.toString(nextPos.latitude));
 			
 			//geo-json output
 			features.add(makeLine(currPos, nextPos));
@@ -113,6 +115,8 @@ public class App {
 		return newLine;
 	}
 	
+	
+	
 	public static List<String> featureToString(List<Feature> features){
 		
 		List<String> featuresString = new ArrayList<String>(); 
@@ -122,6 +126,7 @@ public class App {
 		
 		return featuresString;
 	}
+	
 	
 	
 	public static Drone initDrone(Position startPos, int seed, String version) {
@@ -134,6 +139,8 @@ public class App {
 		
 		return drone;
 	}
+	
+	
 	
 	public static String getMapSource(String d,String m, String y) throws MalformedURLException, IOException {
 	    String mapString = "http://www.homepages.inf.ed.ac.uk/stg/powergrab/"+y+"/"+m+"/"+d+"/powergrabmap.geojson";
