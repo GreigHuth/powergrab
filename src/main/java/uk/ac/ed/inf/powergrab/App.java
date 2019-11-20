@@ -50,17 +50,20 @@ public class App {
 		int seed = Integer.parseInt(args[5]);
 		String version = args[6];
 		
+		//create output files
+				Path jsonFile = Paths.get(version+"-"+d+"-"+m+"-"+y+".geojson");
+				Path txtFile  = Paths.get(version+"-"+d+"-"+m+"-"+y+".txt");
+						
+	    //prepare txt output container
+		List<String> txtOutput = new ArrayList<String>();
+		
 		//get map data from web-server
 		String mapSource = getMapSource(d,m,y);	
 		FeatureCollection map = FeatureCollection.fromJson(mapSource);
-		List<Feature> features = map.features();
 		
-		//create output files
-		Path jsonFile = Paths.get(version+"-"+d+"-"+m+"-"+y+".geojson");
-		Path txtFile  = Paths.get(version+"-"+d+"-"+m+"-"+y+".txt");
+		List<Feature> features = map.features(); // all the features from the map
 		
-		//prepare txt output container
-		List<String> txtOutput = new ArrayList<String>();
+		
 		
 		// initialise drone to be stateless or stateful
 		Drone drone = initDrone(startPos, seed, version);
@@ -74,12 +77,21 @@ public class App {
 			
 			Position currPos = drone.getPos();
 			
+			// do power and coins stuff first incase it spawns in range of a station
 			
-			//calculate and verify next move
-			//      updating power, coins and moves are dealt with in this method
+			
+			//different things happen depending on whether or not the drone is stateless or not
+			if (drone instanceof StatelessDrone) {
+				drone = (StatelessDrone) drone;
+				
+				
+			} else {
+				drone = (StatefulDrone) drone;
+				
+			}
+			
 			
 			String dir = "placeholder"; // direction the drone moves in
-			
 			
 			Position nextPos = drone.getPos(); //these will be different if all goes well :D
 			
@@ -93,6 +105,8 @@ public class App {
 			
 			//geo-json output
 			features.add(makeLine(currPos, nextPos));
+			
+			
 			pb.step();
 			
 		}
@@ -102,7 +116,6 @@ public class App {
 		// turns features into a list of strings so it can be written to a file
 		List<String> featuresString = featureToString(features);	
 		Files.write(jsonFile, featuresString, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-		
 		
 		Files.write(txtFile,txtOutput, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
 		
