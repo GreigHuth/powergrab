@@ -22,6 +22,9 @@ import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.LineString;
 
 public class App {
+    
+    // global variables
+   
 	
 //main class for the project, where stuff is actually run
 	
@@ -51,67 +54,87 @@ public class App {
 		String version = args[6];
 		
 		//create output files
-				Path jsonFile = Paths.get(version+"-"+d+"-"+m+"-"+y+".geojson");
-				Path txtFile  = Paths.get(version+"-"+d+"-"+m+"-"+y+".txt");
+		Path jsonFile = Paths.get(version+"-"+d+"-"+m+"-"+y+".geojson");
+		Path txtFile  = Paths.get(version+"-"+d+"-"+m+"-"+y+".txt");
 						
-	    //prepare txt output container
-		List<String> txtOutput = new ArrayList<String>();
+	   
+		List<String> txtOutput = new ArrayList<String>(); //prepare txt output container
 		
 		//get map data from web-server
 		String mapSource = getMapSource(d,m,y);	
-		FeatureCollection map = FeatureCollection.fromJson(mapSource);
+		FeatureCollection mapJson = FeatureCollection.fromJson(mapSource);
 		
-		List<Feature> features = map.features(); // all the features from the map
+		List<Feature> features = mapJson.features(); // list of features that will be written to the json
+		ArrayList<Station> map = new ArrayList<Station>(); //  map to use for the game
 		
+		map = unpackFeatures(features);
 		
-		
-		// initialise drone to be stateless or stateful
-		Drone drone = initDrone(startPos, seed, version);
-		
-		//just some UI stuff to help usability and debugging
-		ProgressBar pb = new ProgressBar("Running PowerGrab",100,ProgressBarStyle.ASCII).start();
-		
+		Drone drone = initDrone(startPos, seed, version);	
+		System.out.println("Running PowerGrab...");
+
+	
+		 int  moves = 250;
+		 double coins = 0.0;
+		 double power = 250.0;
 		// main game loop
-		while (drone.getMoves() > 0 && drone.getPower() > 0) {	
-			//ensure stateless and stateful drones have the same method names to make this code cleaner
-			
+		while (moves > 0 && power > 1.25) {	
+		
 			Position currPos = drone.getPos();
+			Direction nextMove = null;
 			
-			// do power and coins stuff first incase it spawns in range of a station
-			
-			
-			//different things happen depending on whether or not the drone is stateless or not
+			//block for stateless drone
 			if (drone instanceof StatelessDrone) {
 				drone = (StatelessDrone) drone;
-				
-				
-			} else {
-				drone = (StatefulDrone) drone;
+				nextMove = ((StatelessDrone) drone).calcMove(map);
+				//updates the drones position
+				drone.position.nextPosition(nextMove);
+			
+		
+			}
+			
+			//block for stateful droneHAHAHAHAHAHAHAHAH
+			else {
 				
 			}
 			
+			//this block charges the drone
+			Station chargeStation = getCharge(drone.position, map);// returns the station to charge from
 			
-			String dir = "placeholder"; // direction the drone moves in
+			// if there is a nearest station to charge from, charge from it and update the map
+			if (chargeStation.id.equals("") == false) {
+				coins += chargeStation.coins;
+				power += chargeStation.power;
+				
+				//this block updates the map
+				map = updateMap(chargeStation, map);
+			}
+			
 			
 			Position nextPos = drone.getPos(); //these will be different if all goes well :D
 			
 			//.txt output
 			txtOutput.add(
 					Double.toString(currPos.latitude)+","+Double.toString(currPos.longitude)+
-					","+dir+
-					","+Double.toString(nextPos.latitude)+","+Double.toString(nextPos.latitude)+
-					","+drone.getCoins()+
-					","+drone.getPower());
+					","+nextMove.toString()+
+					","+Double.toString(nextPos.latitude)+","+Double.toString(nextPos.longitude)+
+					","+coins+
+					","+power);
 			
 			//geo-json output
 			features.add(makeLine(currPos, nextPos));
 			
+			System.out.println("moves left:" + moves);
+			System.out.println(txtOutput.get(250-moves));
+			System.out.println();
+			moves--;
 			
-			pb.step();
+			
+			
 			
 		}
 		
-		pb.stop();
+		
+		
 		
 		// turns features into a list of strings so it can be written to a file
 		List<String> featuresString = featureToString(features);	
@@ -120,10 +143,85 @@ public class App {
 		Files.write(txtFile,txtOutput, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
 		
 		
-		
+	
 		
 	}
+
 	
+	
+	//updates the info on the map with the station  =
+	public static ArrayList<Station> updateMap (Station chargeStation, ArrayList<Station> map){
+		
+		for (Station station : map) {
+			if (station.id.equals(chargeStation.id)) {
+				station.power = 0;
+				station.coins = 0;
+			}
+		}
+		return map;
+	}
+	
+	
+	
+	public static Station getCharge(Position dronePos, ArrayList<Station> map){
+		
+	    double stationRange = 0.00025;// aoe of the charging stations
+	    
+	    Position dummy = new Position (100,100);
+	    Station closest = new Station("", dummy, 0, 0, "");
+	    for (Station current : map) {
+	    	double nextDist = distance(dronePos, current.position);
+	    	double currentDist = distance(dronePos, closest.position);
+	    	
+	    	if ( nextDist < stationRange && nextDist < currentDist) {
+	    		closest = current;
+	    	}
+	    }    
+	   return closest;  
+	}
+	
+	
+	
+	public static double distance(Position pos1, Position pos2) {       
+        return Math.sqrt( Math.pow((pos1.latitude - pos2.latitude),2) + Math.pow((pos1.longitude - pos2.longitude),2) );    
+    }
+	
+	
+	
+	public static ArrayList<Station> unpackFeatures(List<Feature> features) {
+		
+		ArrayList<Station> stations = new ArrayList<Station>();
+		
+		for (Feature feature : features ) {
+			String id = feature.getProperty("id").getAsString();
+			Position pos = unpackPosition(feature);
+			double coins = feature.getProperty("coins").getAsDouble();
+			double power = feature.getProperty("power").getAsDouble();
+			String marker = feature.getProperty("marker-symbol").getAsString();
+			
+			stations.add(new Station(id, pos, coins, power, marker));
+		
+		}
+		return stations;
+	}
+
+	
+	
+    public static Position unpackPosition(Feature feature) {
+		
+		Point point ;
+		if (feature.geometry() instanceof Point) { // makes sure we actually get an object thats a Point
+			point = (Point) feature.geometry(); //cast to a point
+		}
+		else {
+			return null;
+		}
+		Position station = new Position(point.latitude(), point.longitude());
+		return station;
+	}
+	
+    
+    
 	public static Feature makeLine(Position currPos, Position nextPos) {
 		List<Point> linePoints = new ArrayList<Point>(); //initialise structure to contain the points to draw the line on the geojson
 		linePoints.add(Point.fromLngLat(currPos.longitude, currPos.latitude));
@@ -149,7 +247,7 @@ public class App {
 	
 	public static Drone initDrone(Position startPos, int seed, String version) {
 		Drone drone;
-		if (version == "stateless") { 
+		if (version.equals("stateless")) { 
 			drone = new StatelessDrone(startPos, seed);
 		}else {
 		    drone = new StatefulDrone(startPos, seed);
