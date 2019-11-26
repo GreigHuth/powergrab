@@ -5,6 +5,7 @@ import me.tongfei.progressbar.ProgressBarStyle;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,14 +30,10 @@ public class App {
 //main class for the project, where stuff is actually run
 	
 	//------Basic TODO-------
-	//1. get json from webserver[x]
-	//2. parse it to get all the features into a data structure[x]
-	//3. Init drone (stateless or not stateless)[x]
-	//4. start drone game loop[x]
-	//5. run game[]
-	//6. build txt and geo-json files with the data from the game[x]
-	//7. write them[x]
-	//8. yaaay done
+	//1. finish stateless drone
+	//2. start thinking about stateful drone/ start writing report
+	//3. dont die
+	
 	
 	
 	public static void main (String args[]) throws MalformedURLException, IOException {
@@ -87,8 +84,7 @@ public class App {
 				drone = (StatelessDrone) drone;
 				nextMove = ((StatelessDrone) drone).calcMove(map);
 				//updates the drones position
-				drone.position.nextPosition(nextMove);
-			
+				drone.position = drone.position.nextPosition(nextMove);
 		
 			}
 			
@@ -96,6 +92,8 @@ public class App {
 			else {
 				
 			}
+			
+			Position nextPos = drone.getPos();
 			
 			//this block charges the drone
 			Station chargeStation = getCharge(drone.position, map);// returns the station to charge from
@@ -110,7 +108,6 @@ public class App {
 			}
 			
 			
-			Position nextPos = drone.getPos(); //these will be different if all goes well :D
 			
 			//.txt output
 			txtOutput.add(
@@ -127,20 +124,31 @@ public class App {
 			System.out.println(txtOutput.get(250-moves));
 			System.out.println();
 			moves--;
+			power -= 1.25;
 			
 			
 			
 			
 		}
+		System.out.println("PowerGrab Complete!");
+		System.out.println("Creating files...");
 		
 		
 		
 		
 		// turns features into a list of strings so it can be written to a file
-		List<String> featuresString = featureToString(features);	
-		Files.write(jsonFile, featuresString, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+	
 		
-		Files.write(txtFile,txtOutput, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+		FeatureCollection jsonOut = FeatureCollection.fromFeatures(features);
+		String jsonString = jsonOut.toJson();
+		
+		BufferedWriter writer = new BufferedWriter(new FileWriter("gj.geojson"));
+		writer.write(jsonString);
+		writer.close();
+		
+		System.out.println(jsonString);
+		//Files.write(jsonFile, (String)jsonString, Charset.defaultCharset());
+		Files.write(txtFile,txtOutput, Charset.defaultCharset());
 		
 		
 	
@@ -170,7 +178,7 @@ public class App {
 	    Position dummy = new Position (100,100);
 	    Station closest = new Station("", dummy, 0, 0, "");
 	    for (Station current : map) {
-	    	double nextDist = distance(dronePos, current.position);
+	    	double nextDist = distance(dronePos, current.position);//distance to next drone to compare to
 	    	double currentDist = distance(dronePos, closest.position);
 	    	
 	    	if ( nextDist < stationRange && nextDist < currentDist) {
@@ -237,7 +245,7 @@ public class App {
 		
 		List<String> featuresString = new ArrayList<String>(); 
 		for ( int i = 0; i < features.size(); i++){
-			featuresString.add(i,  features.get(i).toJson());
+			featuresString.add(i,  features.get(i).toJson()+",");
 		}
 		
 		return featuresString;

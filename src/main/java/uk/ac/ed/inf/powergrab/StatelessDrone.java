@@ -15,6 +15,8 @@ public class StatelessDrone extends Drone {
 	}
 
 	public Direction calcMove(ArrayList<Station> map){
+		
+		Direction chosenMove = null;
 		// THE PLAN
 		// get all the legal moves, ie make sure it stays in the play area [x]
 		// find all the stations that are in range of the drone after 1 move [x]
@@ -53,6 +55,8 @@ public class StatelessDrone extends Drone {
 		
 		// makes sure it is moving within the play area
 		for (Direction direction : directions) {
+
+			
 			if (this.position.nextPosition(direction).inPlayArea()) {
 				legalMoves.add(direction);
 			}
@@ -60,37 +64,95 @@ public class StatelessDrone extends Drone {
 		
 		stationsInRange = findStationsInRange(map, legalMoves);
 		
+		
+		
+		
 		if (stationsInRange.isEmpty()) {
-			
+			chosenMove = randomDirection(legalMoves);	
 		} 
-		else if (stationsInRange.size() == 1){
-				
-		}
-		else {
+		
+		else if (stationsInRange.size() > 0){
 			
+			// pick the station with the highest score
+			// pick the direction that is closest to the highest scoring station
+			Station bestStation = new Station(null,null,0,0,null); // dummy station with low score
+			
+			//finds the best station
+			for (Station station : stationsInRange) {
+				if (station.getScore() > bestStation.getScore()) {
+					bestStation = station;
+				}
+			}
+			
+			chosenMove = decideDirection(legalMoves, bestStation);
 		}
 		
-		
-		
-		
-		
-		
-		return null;
+		return chosenMove;
 
 	}
 	
-	private ArrayList<Station> findStationsInRange(ArrayList<Station> map, ArrayList<Direction> legalMoves){
+	private Direction decideDirection(ArrayList<Direction> legalMoves, Station bestStation) {
+		
+		Pair<Direction,Double> bestMove = new Pair<Direction, Double>(null, 1000.0); //dummy move with high distance
+		for(Direction direction : legalMoves) {
+			double distance = distance(this.position.nextPosition(direction), bestStation.position);
+			if (distance < bestMove.getValue1()) {
+				bestMove = new Pair<Direction,Double>(direction, distance);//idk if this is the best way, but it looks like it should work
+			}
+		}
+		
+		return bestMove.getValue0();
+		
+	}
+	
+	
+	/*
+	private Direction randomDirection(ArrayList<Direction> legalMoves, ArrayList<Station> stationsInRange) {
+		
+		Direction chosenMove = null;
+		
+		while (chosenMove ==  null) {
+			//randomly picks a legal move to make
+			Direction nextMove = legalMoves.get(this.rnd.nextInt(legalMoves.size()-1));
+			for (Station station : stationsInRange) {
+				double distance = distance(this.position.nextPosition(nextMove),station.position);
+				if ( distance < 0.00025 && station.marker.equals("danger")  ) {
+					continue;
+				}
+				chosenMove = nextMove;
+			}
+		}
+		return chosenMove;
+		
+	}
+	*/
+	
+private Direction randomDirection(ArrayList<Direction> legalMoves) {
+		int range = legalMoves.size() - 1;
+		return legalMoves.get(this.rnd.nextInt(range));
+		
+	}
+	
+	
+	
+	//this method also ignores dangerous and already drained stations
+	private ArrayList<Station> findStationsInRange(ArrayList<Station> mapCopy, ArrayList<Direction> legalMoves){
 		
 		ArrayList<Station> stationsInRange = new ArrayList<Station>();
-		final double RANGE = 0.0025; // aoe of each station 
+		final double RANGE = 0.00025; // aoe of each station 
 		
 		for (Direction move : legalMoves) {
 			Position nextPos = this.position.nextPosition(move);
-			for (Station station : map) {
+			
+			Iterator<Station> iter = mapCopy.iterator();
+			
+			while(iter.hasNext()) {
+				Station station = iter.next();
 				double distance = distance(nextPos, station.position);
-				if (distance < RANGE) {
+		
+				if (distance < RANGE && (station.marker.equals("danger") ==  false) && (station.getScore() > 0)) {
 					stationsInRange.add(station);
-					map.remove(station);
+					
 				}
 			}	
 		}
