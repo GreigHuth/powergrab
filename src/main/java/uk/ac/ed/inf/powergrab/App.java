@@ -142,7 +142,7 @@ public class App {
 		FeatureCollection jsonOut = FeatureCollection.fromFeatures(features);
 		String jsonString = jsonOut.toJson();
 		
-		BufferedWriter writer = new BufferedWriter(new FileWriter("gj.geojson"));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(version+"-"+d+"-"+m+"-"+y+".geojson"));
 		writer.write(jsonString);
 		writer.close();
 		
