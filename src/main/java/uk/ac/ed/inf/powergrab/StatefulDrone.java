@@ -28,6 +28,9 @@ public class StatefulDrone extends Drone {
 		
 		
 		
+		ArrayList<Direction> potentialMoves = new ArrayList<Direction>();
+		
+		
 		
 		
 		

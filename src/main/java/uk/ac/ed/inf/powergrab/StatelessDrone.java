@@ -18,45 +18,18 @@ public class StatelessDrone extends Drone {
 	public Direction calcMove(ArrayList<Station> map){
 		
 		Direction chosenMove = null;
-		// THE PLAN
-		// get all the legal moves, ie make sure it stays in the play area [x]
-		// find all the stations that are in range of the drone after 1 move [x]
-		// if #stations in range == 0 
-				//      decide direction via rng
-				// if #stations in range == 1
-				        // if the station is a good one  
-				        //     get the closest direction to the station
-		                // if the station is a bad one
-				        //     move in a random direction thats not in range of the station
-				// if #stations in range >= 2 
-				       //give each station a score
-				       // pick the direction that is closest to the one with the highest score
-		
-		// list of all the directions the drone can move in
  		
 		
-		ArrayList<Direction> legalMoves = new ArrayList<Direction>();
-		ArrayList<Station> stationsInRange = new ArrayList<Station>();
-		
-		// makes sure it is moving within the play area
-		for (Direction direction : this.directions) {
-
-			
-			if (this.position.nextPosition(direction).inPlayArea()) {
-				legalMoves.add(direction);
-			}
-		}
-		
-		stationsInRange = findStationsInRange(map, legalMoves);
+		ArrayList<Direction> legalMoves = legalMoves(this.directions);
+		ArrayList<Station> stationsInRange = findStationsInRange(map, legalMoves);
 		
 		
-		
-		
+		// if there arent any stations in range then pick a random direction to move in
 		if (stationsInRange.isEmpty()) {
 			chosenMove = randomDirection(legalMoves);	
 		} 
 		
-		else if (stationsInRange.size() > 0){
+		else {
 			
 			// pick the station with the highest score
 			// pick the direction that is closest to the highest scoring station
@@ -100,13 +73,12 @@ public class StatelessDrone extends Drone {
 	}
 	*/
 	
-	//returns a random direction to move in
+	//returns a random direction to move in given the legal moves the drone can make
     private Direction randomDirection(ArrayList<Direction> legalMoves) {
 		int range = legalMoves.size() - 1;
 		return legalMoves.get(this.rnd.nextInt(range));
 		
 	}
-	
 	
 	
 	//returns a list of all the stations in range of the moves the drone can make from its current position
@@ -133,12 +105,5 @@ public class StatelessDrone extends Drone {
 		return stationsInRange;
 	}
 		
-	
-	
-	
-	
-	
-
-
 	
 }

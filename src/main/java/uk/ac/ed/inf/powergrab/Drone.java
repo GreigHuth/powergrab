@@ -40,6 +40,19 @@ public class Drone {
 
 	}
 
+	// returns a list of all the moves that are legal (within the play area)
+    public ArrayList<Direction> legalMoves(ArrayList<Direction> directions){
+    
+        ArrayList<Direction> legalMoves = new ArrayList<Direction>();
+        
+        for (Direction direction : this.directions) {	
+		    if (this.position.nextPosition(direction).inPlayArea()) {
+				legalMoves.add(direction);
+			}
+		}
+        
+        return legalMoves;
+    }
 
 	// picks the closest direction to the given station
 	public Direction closestDirection(ArrayList<Direction> legalMoves, Station station) {
