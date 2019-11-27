@@ -29,11 +29,6 @@ public class App {
 	
 //main class for the project, where stuff is actually run
 	
-	//------Basic TODO-------
-	//1. finish stateless drone
-	//2. start thinking about stateful drone/ start writing report
-	//3. dont die
-	
 	
 	
 	public static void main (String args[]) throws MalformedURLException, IOException {
@@ -50,10 +45,7 @@ public class App {
 		int seed = Integer.parseInt(args[5]);
 		String version = args[6];
 		
-		//create output files
-		Path jsonFile = Paths.get(version+"-"+d+"-"+m+"-"+y+".geojson");
-		Path txtFile  = Paths.get(version+"-"+d+"-"+m+"-"+y+".txt");
-						
+		
 	   
 		List<String> txtOutput = new ArrayList<String>(); //prepare txt output container
 		
@@ -68,32 +60,42 @@ public class App {
 		
 		Drone drone = initDrone(startPos, seed, version);	
 		System.out.println("Running PowerGrab...");
-
+		
+		//TODO separate list of stations into list of good stations and dangerous stations
+		
+		//TODO sort the list of good stations into and order to be visited
+		// the order will be which ever unvisited station is closest to the drone at that time
 	
-		 int  moves = 250;
-		 double coins = 0.0;
-		 double power = 250.0;
-		// main game loop
+		//initialise parameters for the game
+	    int  moves = 250;
+	    double coins = 0.0;
+		double power = 250.0;
+		 
+		 
+		// --------------------BEGIN MAIN GAME LOOP-------------------------
 		while (moves > 0 && power > 1.25) {	
 		
-			Position currPos = drone.getPos();
+			Position currPos = drone.position;
 			Direction nextMove = null;
 			
-			//block for stateless drone
+			//-----STATELESS DRONE ------
 			if (drone instanceof StatelessDrone) {
 				drone = (StatelessDrone) drone;
 				nextMove = ((StatelessDrone) drone).calcMove(map);
-				//updates the drones position
-				drone.position = drone.position.nextPosition(nextMove);
+				
+				
 		
 			}
 			
-			//block for stateful droneHAHAHAHAHAHAHAHAH
+			//-----STATEFUL DRONE -----
 			else {
+				
 				
 			}
 			
-			Position nextPos = drone.getPos();
+			drone.position = drone.position.nextPosition(nextMove);
+			
+			Position nextPos = drone.position;
 			
 			//this block charges the drone
 			Station chargeStation = getCharge(drone.position, map);// returns the station to charge from
@@ -130,15 +132,20 @@ public class App {
 			
 			
 		}
+		//---------------END OF MAIN LOOP ----------------------
+		
+		//messages to confirm game is finished
 		System.out.println("PowerGrab Complete!");
-		System.out.println("Creating files...");
+		System.out.println("Creating output files...");
 		
 		
 		
+		//---------------Create Output Files---------------------
 		
+		Path jsonFile = Paths.get(version+"-"+d+"-"+m+"-"+y+".geojson");
+		Path txtFile  = Paths.get(version+"-"+d+"-"+m+"-"+y+".txt");
+								
 		// turns features into a list of strings so it can be written to a file
-	
-		
 		FeatureCollection jsonOut = FeatureCollection.fromFeatures(features);
 		String jsonString = jsonOut.toJson();
 		
@@ -150,14 +157,14 @@ public class App {
 		//Files.write(jsonFile, (String)jsonString, Charset.defaultCharset());
 		Files.write(txtFile,txtOutput, Charset.defaultCharset());
 		
-		
+		System.out.println("Output files created, check the source folder.");
 	
 		
 	}
 
 	
 	
-	//updates the info on the map with the station  =
+	//returns a new map with the given stations "coins" and "power" properties updated
 	public static ArrayList<Station> updateMap (Station chargeStation, ArrayList<Station> map){
 		
 		for (Station station : map) {
@@ -170,7 +177,7 @@ public class App {
 	}
 	
 	
-	
+	// returns the station to charge from
 	public static Station getCharge(Position dronePos, ArrayList<Station> map){
 		
 	    double stationRange = 0.00025;// aoe of the charging stations
@@ -189,13 +196,13 @@ public class App {
 	}
 	
 	
-	
+	//calculates the distance between the given positions
 	public static double distance(Position pos1, Position pos2) {       
         return Math.sqrt( Math.pow((pos1.latitude - pos2.latitude),2) + Math.pow((pos1.longitude - pos2.longitude),2) );    
     }
 	
 	
-	
+	// returns a list representation of all the features in the geo-json file
 	public static ArrayList<Station> unpackFeatures(List<Feature> features) {
 		
 		ArrayList<Station> stations = new ArrayList<Station>();
@@ -214,7 +221,7 @@ public class App {
 	}
 
 	
-	
+	//returns the poisiton associated with the given feature (if its a Point)
     public static Position unpackPosition(Feature feature) {
 		
 		Point point ;
@@ -229,7 +236,7 @@ public class App {
 	}
 	
     
-    
+    //returns a new feature representing a line between the given points
 	public static Feature makeLine(Position currPos, Position nextPos) {
 		List<Point> linePoints = new ArrayList<Point>(); //initialise structure to contain the points to draw the line on the geojson
 		linePoints.add(Point.fromLngLat(currPos.longitude, currPos.latitude));
@@ -240,19 +247,7 @@ public class App {
 	}
 	
 	
-	
-	public static List<String> featureToString(List<Feature> features){
-		
-		List<String> featuresString = new ArrayList<String>(); 
-		for ( int i = 0; i < features.size(); i++){
-			featuresString.add(i,  features.get(i).toJson()+",");
-		}
-		
-		return featuresString;
-	}
-	
-	
-	
+	//returns an initialised drone based on what version the game is to run (stateless or stateful)
 	public static Drone initDrone(Position startPos, int seed, String version) {
 		Drone drone;
 		if (version.equals("stateless")) { 
@@ -265,7 +260,7 @@ public class App {
 	}
 	
 	
-	
+	// fetches the geo-json file from the webserver and then returns it as a string
 	public static String getMapSource(String d,String m, String y) throws MalformedURLException, IOException {
 	    String mapString = "http://www.homepages.inf.ed.ac.uk/stg/powergrab/"+y+"/"+m+"/"+d+"/powergrabmap.geojson";
         
@@ -293,6 +288,21 @@ public class App {
 	    
 	}
 	
+	
+	//TODO decide if i need these dead methods or not
+	
+	/*
+	 * 
+	public static List<String> featureToString(List<Feature> features){
+		
+		List<String> featuresString = new ArrayList<String>(); 
+		for ( int i = 0; i < features.size(); i++){
+			featuresString.add(i,  features.get(i).toJson()+",");
+		}
+		
+		return featuresString;
+	}
+	*/
 	
 	
 }

@@ -1,6 +1,7 @@
 package uk.ac.ed.inf.powergrab;
 
 import org.javatuples.Pair;
+
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -32,29 +33,13 @@ public class StatelessDrone extends Drone {
 				       // pick the direction that is closest to the one with the highest score
 		
 		// list of all the directions the drone can move in
- 		ArrayList<Direction> directions = new ArrayList<Direction>();
-		directions.add(Direction.N);
-		directions.add(Direction.NNE);
-		directions.add(Direction.NE);
-		directions.add(Direction.ENE);
-		directions.add(Direction.E);
-		directions.add(Direction.ESE);
-		directions.add(Direction.SE);
-		directions.add(Direction.SSE);
-		directions.add(Direction.S);
-		directions.add(Direction.SSW);
-		directions.add(Direction.SW);
-		directions.add(Direction.WSW);
-		directions.add(Direction.W);
-		directions.add(Direction.WNW);
-		directions.add(Direction.NW);
-		directions.add(Direction.NNW);
+ 		
 		
 		ArrayList<Direction> legalMoves = new ArrayList<Direction>();
 		ArrayList<Station> stationsInRange = new ArrayList<Station>();
 		
 		// makes sure it is moving within the play area
-		for (Direction direction : directions) {
+		for (Direction direction : this.directions) {
 
 			
 			if (this.position.nextPosition(direction).inPlayArea()) {
@@ -84,26 +69,14 @@ public class StatelessDrone extends Drone {
 				}
 			}
 			
-			chosenMove = decideDirection(legalMoves, bestStation);
+			chosenMove = closestDirection(legalMoves, bestStation);
 		}
 		
 		return chosenMove;
 
 	}
 	
-	private Direction decideDirection(ArrayList<Direction> legalMoves, Station bestStation) {
-		
-		Pair<Direction,Double> bestMove = new Pair<Direction, Double>(null, 1000.0); //dummy move with high distance
-		for(Direction direction : legalMoves) {
-			double distance = distance(this.position.nextPosition(direction), bestStation.position);
-			if (distance < bestMove.getValue1()) {
-				bestMove = new Pair<Direction,Double>(direction, distance);//idk if this is the best way, but it looks like it should work
-			}
-		}
-		
-		return bestMove.getValue0();
-		
-	}
+	
 	
 	
 	/*
@@ -127,7 +100,8 @@ public class StatelessDrone extends Drone {
 	}
 	*/
 	
-private Direction randomDirection(ArrayList<Direction> legalMoves) {
+	//returns a random direction to move in
+    private Direction randomDirection(ArrayList<Direction> legalMoves) {
 		int range = legalMoves.size() - 1;
 		return legalMoves.get(this.rnd.nextInt(range));
 		
@@ -135,7 +109,7 @@ private Direction randomDirection(ArrayList<Direction> legalMoves) {
 	
 	
 	
-	//this method also ignores dangerous and already drained stations
+	//returns a list of all the stations in range of the moves the drone can make from its current position
 	private ArrayList<Station> findStationsInRange(ArrayList<Station> mapCopy, ArrayList<Direction> legalMoves){
 		
 		ArrayList<Station> stationsInRange = new ArrayList<Station>();
@@ -156,10 +130,7 @@ private Direction randomDirection(ArrayList<Direction> legalMoves) {
 				}
 			}	
 		}
-		
 		return stationsInRange;
-		
-		
 	}
 		
 	
