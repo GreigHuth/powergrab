@@ -40,7 +40,7 @@ public class Drone {
 
 	}
 
-	// returns a list of all the moves that are legal (within the play area)
+	// returns a list of all the moves that are legal (within the play area) from the drones current position
     public ArrayList<Direction> legalMoves(ArrayList<Direction> directions){
     
         ArrayList<Direction> legalMoves = new ArrayList<Direction>();
@@ -69,7 +69,8 @@ public class Drone {
 			
 		}
 	
-	public double distance(Position pos1, Position pos2) {
+	//calculates the distance between the given points
+	public static double distance(Position pos1, Position pos2) {
 		
 		return Math.sqrt( Math.pow((pos1.latitude - pos2.latitude),2) + Math.pow((pos1.longitude - pos2.longitude),2) );
 		

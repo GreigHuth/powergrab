@@ -1,13 +1,10 @@
 package uk.ac.ed.inf.powergrab;
 
-import org.javatuples.Pair;
+//import org.javatuples.Pair;
 
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.Iterator;
 
-import com.mapbox.geojson.Feature;
-import com.mapbox.geojson.Point;
 
 public class StatelessDrone extends Drone {
 

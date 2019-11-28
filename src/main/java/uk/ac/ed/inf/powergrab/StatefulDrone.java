@@ -1,6 +1,7 @@
 package uk.ac.ed.inf.powergrab;
 
 import java.util.ArrayList;
+import java.util.ListIterator;
 
 public class StatefulDrone extends Drone {
 
@@ -28,14 +29,74 @@ public class StatefulDrone extends Drone {
 		
 		
 		
-		ArrayList<Direction> potentialMoves = new ArrayList<Direction>();
+		ArrayList<Direction> legalMoves = legalMoves(this.directions);
+		
+		ArrayList<Direction> orderedMoves = sortLegalMoves(legalMoves, destination);
+		
+		Direction chosenMove = null;
+		
+		
+		for (Direction move : orderedMoves) {
+			//if the closest move is in range of a bad station then try the next closest one
+			if(inRange(move, badStations)) {
+				continue;
+				
+			} else {
+				
+				chosenMove = move;
+				break;
+				
+			}
+		}
+		
+		// if all the above moves are in the range of a bad station then pick the original closest one
+		if (chosenMove == null) {
+			chosenMove = orderedMoves.get(0);
+		}
+		
+		return chosenMove;
+	}
+	
+	
+	//returns a list of the possible moves the drone can make in ascending order of distance
+	public ArrayList<Direction> sortLegalMoves(ArrayList<Direction> legalMoves, Station destination){
+		
+		
+		ArrayList<Direction> orderedMoves = new ArrayList<Direction>();
+		
+		ListIterator<Direction> iter = legalMoves.listIterator();
+		
+		while(legalMoves.isEmpty() == false) {
+			Direction closest = closestDirection(legalMoves,destination);
+			orderedMoves.add(closest);
+			legalMoves.remove(closest);
+		}
+		
+		return orderedMoves;
+	}
+	
+	//if the given direction results in a move that is in range of any bad stations, then return true
+	public boolean inRange(Direction direction, ArrayList<Station> badStations) {
+		//TODO if the move results in being in range of a bad Station but its still closer to the good Station
+		//      then move in the direction closest to the good station
 		
 		
 		
 		
+		boolean inRange = false;
 		
+		final double RANGE = 0.00025; 
 		
-		return null;
+		for (Station station : badStations) {
+			double distance = distance(this.position.nextPosition(direction),station.position);
+			if (distance < RANGE) {
+				inRange = true;
+				break;
+			}
+		}
+		
+		return inRange;
+		
 	}
 
 }

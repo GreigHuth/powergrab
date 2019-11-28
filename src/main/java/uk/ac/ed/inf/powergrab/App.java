@@ -1,21 +1,18 @@
 package uk.ac.ed.inf.powergrab;
 
-import me.tongfei.progressbar.ProgressBar;
-import me.tongfei.progressbar.ProgressBarStyle;
-
 import java.io.*;
 import java.net.*;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 import org.apache.commons.io.IOUtils;
-import org.javatuples.*;
+//import org.javatuples.*;
 
 import com.mapbox.geojson.Point;
 import com.mapbox.geojson.FeatureCollection;
@@ -28,8 +25,6 @@ public class App {
    
 	
 //main class for the project, where stuff is actually run
-	
-	
 	
 	public static void main (String args[]) throws MalformedURLException, IOException {
 		
@@ -61,11 +56,23 @@ public class App {
 		Drone drone = initDrone(startPos, seed, version);	
 		System.out.println("Running PowerGrab...");
 		
-		//TODO separate list of stations into list of good stations and dangerous stations
+		//separate list of stations into list of good stations and dangerous stations
 		
-		//TODO sort the list of good stations into and order to be visited
+		ArrayList<Station> badStations  = new ArrayList<Station>();
+		ArrayList<Station> goodStations = new ArrayList<Station>();
+		
+		for (Station station : map) {
+			if (station.marker.equals("danger")) {
+				badStations.add(station);
+			}
+			else if (station.marker.equals("lighthouse")) {
+				goodStations.add(station);
+			}
+		}
+		
 		// the order will be which ever unvisited station is closest to the drone at that time
-	
+		ArrayList<Station> orderedStations =  sortStations(startPos, goodStations);
+
 		//initialise parameters for the game
 	    int  moves = 250;
 	    double coins = 0.0;
@@ -74,22 +81,29 @@ public class App {
 		 
 		// --------------------BEGIN MAIN GAME LOOP-------------------------
 		while (moves > 0 && power > 1.25) {	
+			
+			Station destination = null;
 		
-			Position currPos = drone.position;
+			Position currentPos = drone.position;
 			Direction nextMove = null;
 			
 			//-----STATELESS DRONE ------
 			if (drone instanceof StatelessDrone) {
 				drone = (StatelessDrone) drone;
 				nextMove = ((StatelessDrone) drone).calcMove(map);
-				
-				
-		
 			}
 			
 			//-----STATEFUL DRONE -----
 			else {
 				
+				if (orderedStations.isEmpty()) {
+					destination = new Station (null,currentPos,0,0,null);
+				} else {
+					destination = orderedStations.get(0);
+				    
+				}
+				//if the list of places to be visited is empty then give the drone a fixed position to move to over and over again
+				nextMove = ((StatefulDrone) drone).calculateDirection(destination, badStations);
 				
 			}
 			
@@ -98,7 +112,15 @@ public class App {
 			Position nextPos = drone.position;
 			
 			//this block charges the drone
-			Station chargeStation = getCharge(drone.position, map);// returns the station to charge from
+			Station chargeStation = getStationToChargeFrom(drone.position, map);// returns the station to charge from
+			
+			
+			// if the station its charging from is the destination station, then remove it from the list of stations to be 
+			//     vistited
+			if (chargeStation == destination) {
+				orderedStations.remove(destination);
+			}
+			
 			
 			// if there is a nearest station to charge from, charge from it and update the map
 			if (chargeStation.id.equals("") == false) {
@@ -110,27 +132,26 @@ public class App {
 			}
 			
 			
-			
 			//.txt output
 			txtOutput.add(
-					Double.toString(currPos.latitude)+","+Double.toString(currPos.longitude)+
+					Double.toString(currentPos.latitude)+","+Double.toString(currentPos.longitude)+
 					","+nextMove.toString()+
 					","+Double.toString(nextPos.latitude)+","+Double.toString(nextPos.longitude)+
 					","+coins+
 					","+power);
 			
 			//geo-json output
-			features.add(makeLine(currPos, nextPos));
+			features.add(makeLine(currentPos, nextPos));
 			
+			//some stuff to help debug
 			System.out.println("moves left:" + moves);
 			System.out.println(txtOutput.get(250-moves));
 			System.out.println();
+			
+			
 			moves--;
 			power -= 1.25;
-			
-			
-			
-			
+		
 		}
 		//---------------END OF MAIN LOOP ----------------------
 		
@@ -142,7 +163,7 @@ public class App {
 		
 		//---------------Create Output Files---------------------
 		
-		Path jsonFile = Paths.get(version+"-"+d+"-"+m+"-"+y+".geojson");
+		//Path jsonFile = Paths.get(version+"-"+d+"-"+m+"-"+y+".geojson");
 		Path txtFile  = Paths.get(version+"-"+d+"-"+m+"-"+y+".txt");
 								
 		// turns features into a list of strings so it can be written to a file
@@ -163,6 +184,40 @@ public class App {
 	}
 
 	
+	public static ArrayList<Station> sortStations(Position position, ArrayList<Station> stations){
+		ArrayList<Station> orderedStations = new ArrayList<Station>();
+		Iterator<Station> iter = stations.iterator();
+		
+		Position currentPosition =  position;
+		while(stations.isEmpty() == false) {
+			Station closestStation = getClosestStation(currentPosition, stations);
+			orderedStations.add(closestStation);
+			currentPosition = closestStation.position;
+			stations.remove(closestStation);
+		}
+		
+		return orderedStations;
+	}
+	
+	public static Station getClosestStation(Position position, ArrayList<Station> stations) {
+
+		
+		Position dummy = new Position (100,100);
+	    Station closest = new Station("", dummy, 0, 0, "");
+	    for (Station current : stations) {
+	    	double nextDist = distance(position, current.position);//distance to next drone to compare to
+	    	double currentDist = distance(position, closest.position);
+	    	
+	    	if (nextDist < currentDist) {
+	    		closest = current;
+	    	}
+	    }    
+	   return closest;
+		
+		
+		
+	}
+	
 	
 	//returns a new map with the given stations "coins" and "power" properties updated
 	public static ArrayList<Station> updateMap (Station chargeStation, ArrayList<Station> map){
@@ -177,8 +232,8 @@ public class App {
 	}
 	
 	
-	// returns the station to charge from
-	public static Station getCharge(Position dronePos, ArrayList<Station> map){
+	// if the given position is in range of any stations, it charges from the closest one, else it returns a dummy value
+	public static Station getStationToChargeFrom(Position dronePos, ArrayList<Station> map){
 		
 	    double stationRange = 0.00025;// aoe of the charging stations
 	    
@@ -289,7 +344,7 @@ public class App {
 	}
 	
 	
-	//TODO decide if i need these dead methods or not
+	//decide if i need these dead methods or not
 	
 	/*
 	 * 
