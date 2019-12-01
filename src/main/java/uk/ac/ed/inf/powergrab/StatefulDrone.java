@@ -135,7 +135,7 @@ public class StatefulDrone extends Drone {
 					this.getPosition().nextPosition(chosenDirection),
 					destination.getPosition());
 			
-			if (distanceToDest < RANGE && distanceToBad < RANGE && distanceToDest < distanceToBad){
+			if (distanceToDest <= RANGE && distanceToBad <= RANGE && distanceToDest < distanceToBad){
 				inRange = false;
 				break;
 			}

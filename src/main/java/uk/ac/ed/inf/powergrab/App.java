@@ -7,12 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 
 import org.apache.commons.io.IOUtils;
-//import org.javatuples.*;
 
 import com.mapbox.geojson.Point;
 import com.mapbox.geojson.FeatureCollection;
@@ -20,10 +17,7 @@ import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.LineString;
 
 public class App {
-    
-    // global variables
-   
-	
+   	
 //main class for the project, where stuff is actually run
 	
 	public static void main (String args[]) throws MalformedURLException, IOException {
@@ -61,6 +55,7 @@ public class App {
 	    double power = 250;
 		 
 	    System.out.println("Running PowerGrab...");
+	    
 		// --------------------BEGIN MAIN GAME LOOP-------------------------
 		while (moves > 0 && power > 1.25) {	
 			
@@ -81,8 +76,11 @@ public class App {
 				//if the drone has already visited all the stations then it just goes back and 
 				//	forth to avoid danger
 				if (((StatefulDrone) drone).getOrderedStations().isEmpty()) {
+					
 					destination = new Station (null,currentPos,0,0,null);
+					
 				} else {
+					
 					destination = ((StatefulDrone) drone).getOrderedStations().get(0);			    
 				}
 	
@@ -95,16 +93,22 @@ public class App {
 		
 			
 			//-----CHARGING BLOCK-----
+			//when a drone charges from a station it drains the station of its coins and power
 			Station chargeStation = getStationToChargeFrom(drone.getPosition(), allStations);
-			if (chargeStation == destination) {
-				((StatefulDrone) drone).getOrderedStations().remove(destination);
-			}
+			
 			// if there is a nearest station to charge from, charge from it and update the map
 			if (chargeStation.getId().equals("") == false) {
+				
+				// if the station the drone is charging from is the target of the stateful drone, then remove it 
+				// from the list of stations to visit
+				if (chargeStation == destination) {
+					((StatefulDrone) drone).getOrderedStations().remove(destination);
+				}
+				
 				coins += chargeStation.getCoins();
 				power += chargeStation.getPower();
 				
-				//this block updates the map
+				//this block updates the station that has been charged from
 				allStations = updateMap(chargeStation, allStations);
 			}
 			
@@ -159,36 +163,35 @@ public class App {
 		Files.write(txtFile,txtOutput, Charset.defaultCharset());
 		
 		System.out.println("Output files created, check the source folder.");
-	
-		
 	}
 
 	
 	
-	
-	
-	//returns a new map with the given stations "coins" and "power" properties updated
-	public static ArrayList<Station> updateMap (Station chargeStation, ArrayList<Station> map){
+	//returns a new map with the given stations "coins" and "power" attributes updated
+	public static ArrayList<Station> updateMap (Station chargeStation, ArrayList<Station> allStations){
 		
-		for (Station station : map) {
+		for (Station station : allStations) {
 			if (station.getId().equals(chargeStation.getId())) {
 				station.setPower(0);
 				station.setCoins(0);
 			}
 		}
-		return map;
+		return allStations;
 	}
 	
 	
 	// if the given position is in range of any stations, it charges from the closest one, else it returns a dummy value
-	public static Station getStationToChargeFrom(Position dronePos, ArrayList<Station> map){
+	public static Station getStationToChargeFrom(Position dronePos, ArrayList<Station> allStations){
 		
 	    double stationRange = 0.00025;// aoe of the charging stations
 	    
 	    Position dummy = new Position (100,100);
 	    Station closest = new Station("", dummy, 0, 0, "");
-	    for (Station current : map) {
-	    	double nextDist = distance(dronePos, current.getPosition());//distance to next drone to compare to
+	    
+	    for (Station current : allStations) {
+	    	
+	    	double nextDist = distance(dronePos, current.getPosition());
+	    	
 	    	double currentDist = distance(dronePos, closest.getPosition());
 	    	
 	    	if ( nextDist < stationRange && nextDist < currentDist) {
