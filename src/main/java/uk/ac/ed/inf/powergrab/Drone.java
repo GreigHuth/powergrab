@@ -7,17 +7,17 @@ import java.util.Random;
 import org.javatuples.Pair;
 
 public class Drone {
-	public ArrayList<Direction> directions = new ArrayList<Direction>();
-	public Position position;
-	public Random rnd ; //  need to have this here to ensure the seed works as intended
-	public int seed;
+	private final ArrayList<Direction> directions = new ArrayList<Direction>();
+	private Position position;
+	public final Random rnd ; 
+	private final int seed;
 
 	
 	
-	// constructor for drone same for every drone
+	// constructor both drones use this constructor
 	public Drone(Position position, int seed) {
 		this.rnd = new Random(this.seed);
-		this.position = position;
+		this.setPosition(position);
 		this.seed = seed;
 		
 		//when the drone is initialised add all the directions to the attribute
@@ -41,12 +41,12 @@ public class Drone {
 	}
 
 	// returns a list of all the moves that are legal (within the play area) from the drones current position
-    public ArrayList<Direction> legalMoves(ArrayList<Direction> directions){
+    public ArrayList<Direction> legalDirections(){
     
         ArrayList<Direction> legalMoves = new ArrayList<Direction>();
         
         for (Direction direction : this.directions) {	
-		    if (this.position.nextPosition(direction).inPlayArea()) {
+		    if (this.getPosition().nextPosition(direction).inPlayArea()) {
 				legalMoves.add(direction);
 			}
 		}
@@ -54,25 +54,43 @@ public class Drone {
         return legalMoves;
     }
 
-	// picks the closest direction to the given station
-	public Direction closestDirection(ArrayList<Direction> legalMoves, Station station) {
+	// finds the closest direction to the given station
+	public Direction closestDirection(ArrayList<Direction> legalDirections, Station station) {
 			
-		Pair<Direction,Double> closestDirection = new Pair<Direction, Double>(null, 1000.0); //dummy move with high distance
-		for(Direction direction : legalMoves) {
-			double distance = distance(this.position.nextPosition(direction), station.position);
+		//initialise with a dummy value so you can find the smallest one
+		Pair<Direction,Double> closestDirection = new Pair<Direction, Double>(null, 1000.0);
+		
+		for(Direction direction : legalDirections) {
+			
+			double distance = distance(
+					this.getPosition().nextPosition(direction), 
+					station.getPosition());
+			
+			//if current direction is closer than the previous closest, then overwrite it
 			if (distance < closestDirection.getValue1()) {
-				closestDirection = new Pair<Direction,Double>(direction, distance);//idk if this is the best way, but it looks like it should work
+				closestDirection = new Pair<Direction,Double>(direction, distance);
 			}
 		}
 			
 			return closestDirection.getValue0();
-			
 		}
 	
 	//calculates the distance between the given points
 	public static double distance(Position pos1, Position pos2) {
 		
-		return Math.sqrt( Math.pow((pos1.latitude - pos2.latitude),2) + Math.pow((pos1.longitude - pos2.longitude),2) );
+		return Math.sqrt( 
+				Math.pow((pos1.getLatitude() - pos2.getLatitude()),2) 
+				+ Math.pow((pos1.getLongitude() - pos2.getLongitude()),2) );
 		
+	}
+
+	
+	// -----GETTERS AND SETTERS-----
+	public Position getPosition() {
+		return position;
+	}
+
+	public void setPosition(Position position) {
+		this.position = position;
 	}
 }

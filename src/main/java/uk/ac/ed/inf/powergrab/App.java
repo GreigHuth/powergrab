@@ -49,99 +49,79 @@ public class App {
 		FeatureCollection mapJson = FeatureCollection.fromJson(mapSource);
 		
 		List<Feature> features = mapJson.features(); // list of features that will be written to the json
-		ArrayList<Station> map = new ArrayList<Station>(); //  map to use for the game
+		ArrayList<Station> allStations = new ArrayList<Station>(); //list of all the stations in the game
+		allStations = unpackFeatures(features);
 		
-		map = unpackFeatures(features);
+		Drone drone = initDrone(startPos, seed, version, allStations);	
 		
-		Drone drone = initDrone(startPos, seed, version);	
-		System.out.println("Running PowerGrab...");
 		
-		//separate list of stations into list of good stations and dangerous stations
-		
-		ArrayList<Station> badStations  = new ArrayList<Station>();
-		ArrayList<Station> goodStations = new ArrayList<Station>();
-		
-		for (Station station : map) {
-			if (station.marker.equals("danger")) {
-				badStations.add(station);
-			}
-			else if (station.marker.equals("lighthouse")) {
-				goodStations.add(station);
-			}
-		}
-		
-		// the order will be which ever unvisited station is closest to the drone at that time
-		ArrayList<Station> orderedStations =  sortStations(startPos, goodStations);
-
-		//initialise parameters for the game
+		//initialise critical variables for the game
 	    int  moves = 250;
-	    double coins = 0.0;
-		double power = 250.0;
+	    double coins = 0;
+	    double power = 250;
 		 
-		 
+	    System.out.println("Running PowerGrab...");
 		// --------------------BEGIN MAIN GAME LOOP-------------------------
 		while (moves > 0 && power > 1.25) {	
 			
 			Station destination = null;
 		
-			Position currentPos = drone.position;
+			Position currentPos = drone.getPosition();
 			Direction nextMove = null;
 			
 			//-----STATELESS DRONE ------
 			if (drone instanceof StatelessDrone) {
-				drone = (StatelessDrone) drone;
-				nextMove = ((StatelessDrone) drone).calcMove(map);
+				nextMove = ((StatelessDrone) drone).calculateDirection(allStations);
 			}
+			
 			
 			//-----STATEFUL DRONE -----
 			else {
 				
-				if (orderedStations.isEmpty()) {
+				//if the drone has already visited all the stations then it just goes back and 
+				//	forth to avoid danger
+				if (((StatefulDrone) drone).getOrderedStations().isEmpty()) {
 					destination = new Station (null,currentPos,0,0,null);
 				} else {
-					destination = orderedStations.get(0);
-				    
+					destination = ((StatefulDrone) drone).getOrderedStations().get(0);			    
 				}
-				//if the list of places to be visited is empty then give the drone a fixed position to move to over and over again
-				nextMove = ((StatefulDrone) drone).calculateDirection(destination, badStations);
-				
+	
+				nextMove = ((StatefulDrone) drone).decideDirection(destination);			
 			}
 			
-			drone.position = drone.position.nextPosition(nextMove);
+			//update drones position and 
+			drone.setPosition(drone.getPosition().nextPosition(nextMove));
+			Position nextPos = drone.getPosition();
+		
 			
-			Position nextPos = drone.position;
-			
-			//this block charges the drone
-			Station chargeStation = getStationToChargeFrom(drone.position, map);// returns the station to charge from
-			
-			
-			// if the station its charging from is the destination station, then remove it from the list of stations to be 
-			//     vistited
+			//-----CHARGING BLOCK-----
+			Station chargeStation = getStationToChargeFrom(drone.getPosition(), allStations);
 			if (chargeStation == destination) {
-				orderedStations.remove(destination);
+				((StatefulDrone) drone).getOrderedStations().remove(destination);
 			}
-			
-			
 			// if there is a nearest station to charge from, charge from it and update the map
-			if (chargeStation.id.equals("") == false) {
-				coins += chargeStation.coins;
-				power += chargeStation.power;
+			if (chargeStation.getId().equals("") == false) {
+				coins += chargeStation.getCoins();
+				power += chargeStation.getPower();
 				
 				//this block updates the map
-				map = updateMap(chargeStation, map);
+				allStations = updateMap(chargeStation, allStations);
 			}
 			
 			
+			//-----GENERATE OUTPUT-----
 			//.txt output
 			txtOutput.add(
-					Double.toString(currentPos.latitude)+","+Double.toString(currentPos.longitude)+
+					Double.toString(currentPos.getLatitude())+
+					","+Double.toString(currentPos.getLongitude())+
 					","+nextMove.toString()+
-					","+Double.toString(nextPos.latitude)+","+Double.toString(nextPos.longitude)+
+					","+Double.toString(nextPos.getLatitude())+
+					","+Double.toString(nextPos.getLongitude())+
 					","+coins+
 					","+power);
-			
 			//geo-json output
 			features.add(makeLine(currentPos, nextPos));
+			
 			
 			//some stuff to help debug
 			System.out.println("moves left:" + moves);
@@ -184,48 +164,16 @@ public class App {
 	}
 
 	
-	public static ArrayList<Station> sortStations(Position position, ArrayList<Station> stations){
-		ArrayList<Station> orderedStations = new ArrayList<Station>();
-		Iterator<Station> iter = stations.iterator();
-		
-		Position currentPosition =  position;
-		while(stations.isEmpty() == false) {
-			Station closestStation = getClosestStation(currentPosition, stations);
-			orderedStations.add(closestStation);
-			currentPosition = closestStation.position;
-			stations.remove(closestStation);
-		}
-		
-		return orderedStations;
-	}
 	
-	public static Station getClosestStation(Position position, ArrayList<Station> stations) {
-
-		
-		Position dummy = new Position (100,100);
-	    Station closest = new Station("", dummy, 0, 0, "");
-	    for (Station current : stations) {
-	    	double nextDist = distance(position, current.position);//distance to next drone to compare to
-	    	double currentDist = distance(position, closest.position);
-	    	
-	    	if (nextDist < currentDist) {
-	    		closest = current;
-	    	}
-	    }    
-	   return closest;
-		
-		
-		
-	}
 	
 	
 	//returns a new map with the given stations "coins" and "power" properties updated
 	public static ArrayList<Station> updateMap (Station chargeStation, ArrayList<Station> map){
 		
 		for (Station station : map) {
-			if (station.id.equals(chargeStation.id)) {
-				station.power = 0;
-				station.coins = 0;
+			if (station.getId().equals(chargeStation.getId())) {
+				station.setPower(0);
+				station.setCoins(0);
 			}
 		}
 		return map;
@@ -240,8 +188,8 @@ public class App {
 	    Position dummy = new Position (100,100);
 	    Station closest = new Station("", dummy, 0, 0, "");
 	    for (Station current : map) {
-	    	double nextDist = distance(dronePos, current.position);//distance to next drone to compare to
-	    	double currentDist = distance(dronePos, closest.position);
+	    	double nextDist = distance(dronePos, current.getPosition());//distance to next drone to compare to
+	    	double currentDist = distance(dronePos, closest.getPosition());
 	    	
 	    	if ( nextDist < stationRange && nextDist < currentDist) {
 	    		closest = current;
@@ -253,7 +201,9 @@ public class App {
 	
 	//calculates the distance between the given positions
 	public static double distance(Position pos1, Position pos2) {       
-        return Math.sqrt( Math.pow((pos1.latitude - pos2.latitude),2) + Math.pow((pos1.longitude - pos2.longitude),2) );    
+        return Math.sqrt( 
+        		Math.pow((pos1.getLatitude() - pos2.getLatitude()),2) 
+        		+ Math.pow((pos1.getLongitude() - pos2.getLongitude()),2) );    
     }
 	
 	
@@ -276,7 +226,7 @@ public class App {
 	}
 
 	
-	//returns the poisiton associated with the given feature (if its a Point)
+	//returns the position associated with the given feature (if its a Point)
     public static Position unpackPosition(Feature feature) {
 		
 		Point point ;
@@ -294,8 +244,8 @@ public class App {
     //returns a new feature representing a line between the given points
 	public static Feature makeLine(Position currPos, Position nextPos) {
 		List<Point> linePoints = new ArrayList<Point>(); //initialise structure to contain the points to draw the line on the geojson
-		linePoints.add(Point.fromLngLat(currPos.longitude, currPos.latitude));
-		linePoints.add(Point.fromLngLat(nextPos.longitude, nextPos.latitude));		
+		linePoints.add(Point.fromLngLat(currPos.getLongitude(), currPos.getLatitude()));
+		linePoints.add(Point.fromLngLat(nextPos.getLongitude(), nextPos.getLatitude()));		
 		Feature newLine = Feature.fromGeometry(LineString.fromLngLats(linePoints));
 		
 		return newLine;
@@ -303,12 +253,12 @@ public class App {
 	
 	
 	//returns an initialised drone based on what version the game is to run (stateless or stateful)
-	public static Drone initDrone(Position startPos, int seed, String version) {
+	public static Drone initDrone(Position startPos, int seed, String version, ArrayList<Station> allStations) {
 		Drone drone;
 		if (version.equals("stateless")) { 
 			drone = new StatelessDrone(startPos, seed);
 		}else {
-		    drone = new StatefulDrone(startPos, seed);
+		    drone = new StatefulDrone(startPos, allStations);
 		}
 		
 		return drone;
@@ -317,7 +267,8 @@ public class App {
 	
 	// fetches the geo-json file from the webserver and then returns it as a string
 	public static String getMapSource(String d,String m, String y) throws MalformedURLException, IOException {
-	    String mapString = "http://www.homepages.inf.ed.ac.uk/stg/powergrab/"+y+"/"+m+"/"+d+"/powergrabmap.geojson";
+	    String mapString = "http://www.homepages.inf.ed.ac.uk/stg/powergrab/"
+	    						+y+"/"+m+"/"+d+"/powergrabmap.geojson";
         
         //create URL
         URL mapURL = new URL(mapString);
@@ -343,21 +294,6 @@ public class App {
 	    
 	}
 	
-	
-	//decide if i need these dead methods or not
-	
-	/*
-	 * 
-	public static List<String> featureToString(List<Feature> features){
-		
-		List<String> featuresString = new ArrayList<String>(); 
-		for ( int i = 0; i < features.size(); i++){
-			featuresString.add(i,  features.get(i).toJson()+",");
-		}
-		
-		return featuresString;
-	}
-	*/
 	
 	
 }

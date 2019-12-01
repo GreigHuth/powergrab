@@ -1,44 +1,35 @@
 package uk.ac.ed.inf.powergrab;
 
 import java.util.ArrayList;
-import java.util.ListIterator;
 
 public class StatefulDrone extends Drone {
-
-	public StatefulDrone(Position position, int seed) {
-		super (position, seed);
+	
+	private ArrayList<Station> goodStations = new ArrayList<Station>();
+	private ArrayList<Station> badStations= new ArrayList<Station>();
+	private ArrayList<Station> orderedStations= new ArrayList<Station>();
+	
+	
+	public StatefulDrone(Position position, ArrayList<Station> stations) {
+		super (position, 0);
+		seperateStations(stations);
+		sortStations();
 	}
 	
-	//The stateful drone will always move to whatever unvisited "good" station is closest
-	//if there is a bad station in the way 
-	//	it will move to the second closest direction to its destination
+	//TODO need to get perfect on 03/03 and 09/09 
 	
-	public Direction calculateDirection(Station destination, ArrayList<Station> badStations){
-		// destination - the next closest station its trying to move to
-		// badStations -  list of stations to avoid
+	//decides which direction to go in
+	public Direction decideDirection(Station destination){
 		
-		//----Structure-----
-		//1. get a list of all potential directions to move in
-		//2. rank all the directions to move in in terms of which is closest to the destination
-		//3. for every element in this list
-		//3.1	 pick the first direction in this list (ie the closest one)
-		//3.2 	 if that direction is in range of any bad stations then move on to the next one
-		//3.3    keep looping through until you find a direction that is not in range of a bad station 	
-		//4. if no move has been found then pick the closest one to the destination
-		//5. return that direction
+		ArrayList<Direction> legalMoves = legalDirections();
 		
-		
-		
-		ArrayList<Direction> legalMoves = legalMoves(this.directions);
-		
-		ArrayList<Direction> orderedMoves = sortLegalMoves(legalMoves, destination);
+		ArrayList<Direction> orderedMoves = sortDirections(legalMoves, destination);
 		
 		Direction chosenMove = null;
 		
 		
 		for (Direction move : orderedMoves) {
 			//if the closest move is in range of a bad station then try the next closest one
-			if(inRange(move, badStations)) {
+			if(inDanger(move, destination)) {
 				continue;
 				
 			} else {
@@ -58,45 +49,133 @@ public class StatefulDrone extends Drone {
 	}
 	
 	
+	//splits up stations into good and bad stations
+	private void seperateStations(ArrayList<Station> stations) {
+		
+		for (Station station : stations) {
+			if (station.getMarker().equals("danger")) {
+				this.getBadStations().add(station);
+			}
+			else if (station.getMarker().equals("lighthouse")) {
+				this.getGoodStations().add(station);
+			}
+		}
+	}
+
+	
+	// sorts the stations by distance to the nearest station from the drones position at the time
+	//      in ascending order
+	private void sortStations(){
+		
+		Position currentPosition =  this.getPosition();
+		
+		//sort the stations based on which one is closest to the drone at that time
+		while(this.getGoodStations().isEmpty() == false) {
+			
+			Station closestStation = getClosestStation(currentPosition, this.getGoodStations());
+			this.getOrderedStations().add(closestStation);
+			
+			currentPosition = closestStation.getPosition();
+			this.getGoodStations().remove(closestStation);
+		}
+		
+	}
+	
+	
+	//returns the closest station to the given position
+	private static Station getClosestStation(Position position, ArrayList<Station> stations) {
+
+		
+		Position dummy = new Position (100,100);
+	    Station closest = new Station("", dummy, 0, 0, "");
+	    for (Station current : stations) {
+	    	double nextDist = distance(position, current.getPosition());//distance to next drone to compare to
+	    	double currentDist = distance(position, closest.getPosition());
+	    	
+	    	if (nextDist < currentDist) {
+	    		closest = current;
+	    	}
+	    }    
+	   return closest;
+		
+		
+		
+	}
+	
+	
 	//returns a list of the possible moves the drone can make in ascending order of distance
-	public ArrayList<Direction> sortLegalMoves(ArrayList<Direction> legalMoves, Station destination){
+	private ArrayList<Direction> sortDirections(ArrayList<Direction> directions, Station destination){
 		
 		
-		ArrayList<Direction> orderedMoves = new ArrayList<Direction>();
+ 		ArrayList<Direction> orderedMoves = new ArrayList<Direction>();
 		
-		ListIterator<Direction> iter = legalMoves.listIterator();
-		
-		while(legalMoves.isEmpty() == false) {
-			Direction closest = closestDirection(legalMoves,destination);
+		while(directions.isEmpty() == false) {
+			Direction closest = closestDirection(directions,destination);
 			orderedMoves.add(closest);
-			legalMoves.remove(closest);
+			directions.remove(closest);
 		}
 		
 		return orderedMoves;
 	}
 	
 	//if the given direction results in a move that is in range of any bad stations, then return true
-	public boolean inRange(Direction direction, ArrayList<Station> badStations) {
-		//TODO if the move results in being in range of a bad Station but its still closer to the good Station
-		//      then move in the direction closest to the good station
-		
-		
-		
+	private boolean inDanger(Direction chosenDirection, Station destination) {
 		
 		boolean inRange = false;
 		
 		final double RANGE = 0.00025; 
 		
-		for (Station station : badStations) {
-			double distance = distance(this.position.nextPosition(direction),station.position);
-			if (distance < RANGE) {
+		for (Station station : this.getBadStations()) {
+			
+			double distanceToBad = distance(
+					this.getPosition().nextPosition(chosenDirection),
+					station.getPosition());
+			
+			double distanceToDest = distance(
+					this.getPosition().nextPosition(chosenDirection),
+					destination.getPosition());
+			
+			if (distanceToDest < RANGE && distanceToBad < RANGE && distanceToDest < distanceToBad){
+				inRange = false;
+				break;
+			}
+			
+			else if (distanceToBad < RANGE) {
 				inRange = true;
 				break;
 			}
+		
 		}
 		
 		return inRange;
 		
+	}
+
+	
+	// -----GETTERS AND SETTERS-----
+	public ArrayList<Station> getGoodStations() {
+		return goodStations;
+	}
+	
+
+	public void setGoodStations(ArrayList<Station> goodStations) {
+		this.goodStations = goodStations;
+	}
+
+	public ArrayList<Station> getOrderedStations() {
+		return orderedStations;
+	}
+
+	public void setOrderedStations(ArrayList<Station> orderedStations) {
+		this.orderedStations = orderedStations;
+	}
+
+	public ArrayList<Station> getBadStations() {
+		return badStations;
+	}
+
+	public void setBadStations(ArrayList<Station> badStations) {
+		this.badStations = badStations;
 	}
 
 }

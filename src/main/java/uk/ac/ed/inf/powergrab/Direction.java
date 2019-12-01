@@ -36,21 +36,21 @@ public enum Direction {
 	NW(-0.0003*cos(toRadians(45)),0.0003*sin(toRadians(45))),
 	NNW(-0.0003*cos(toRadians(67.5)),0.0003*sin(toRadians(67.5)));
 	
-	private double  w; // the width is added to the longitude to get the new position
-	private double  h; // the height is added to the latitude to get the new position
+	private double  width; // the width is added to the longitude to get the new position
+	private double  height; // the height is added to the latitude to get the new position
 	
 	Direction(double w, double h){
-		this.w = w;
-		this.h = h;
+		this.width = w;
+		this.height = h;
 	}
 	
 	
 	public double getWidth() {
-		return this.w;
+		return this.width;
 	}
 	
 	public double getHeight(){
-		return this.h;
+		return this.height;
 	}
 	
 	

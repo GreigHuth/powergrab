@@ -4,6 +4,7 @@ package uk.ac.ed.inf.powergrab;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 
 public class StatelessDrone extends Drone {
@@ -12,18 +13,18 @@ public class StatelessDrone extends Drone {
 		super(position, seed);
 	}
 
-	public Direction calcMove(ArrayList<Station> map){
+	public Direction calculateDirection(ArrayList<Station> stations){
 		
 		Direction chosenMove = null;
  		
 		
-		ArrayList<Direction> legalMoves = legalMoves(this.directions);
-		ArrayList<Station> stationsInRange = findStationsInRange(map, legalMoves);
+		ArrayList<Direction> legalDirections = legalDirections();
+		ArrayList<Station> stationsInRange = stationsInRange(stations, legalDirections);
 		
 		
-		// if there arent any stations in range then pick a random direction to move in
+		// if there aren't any stations in range then pick a random direction to move in
 		if (stationsInRange.isEmpty()) {
-			chosenMove = randomDirection(legalMoves);	
+			chosenMove = randomDirection(legalDirections);	
 		} 
 		
 		else {
@@ -39,7 +40,7 @@ public class StatelessDrone extends Drone {
 				}
 			}
 			
-			chosenMove = closestDirection(legalMoves, bestStation);
+			chosenMove = closestDirection(legalDirections, bestStation);
 		}
 		
 		return chosenMove;
@@ -47,18 +48,17 @@ public class StatelessDrone extends Drone {
 	}
 	
 	
-	
-	
+	//TODO get this method to work. the drone sucks without it
 	/*
-	private Direction randomDirection(ArrayList<Direction> legalMoves, ArrayList<Station> stationsInRange) {
+	private Direction randomDirection(ArrayList<Direction> legalDirections, ArrayList<Station> stationsInRange) {
 		
 		Direction chosenMove = null;
 		
 		while (chosenMove ==  null) {
 			//randomly picks a legal move to make
-			Direction nextMove = legalMoves.get(this.rnd.nextInt(legalMoves.size()-1));
+			Direction nextMove = legalDirections.get(this.rnd.nextInt(legalDirections.size()-1));
 			for (Station station : stationsInRange) {
-				double distance = distance(this.position.nextPosition(nextMove),station.position);
+				double distance = distance(this.getPosition().nextPosition(nextMove),station.position);
 				if ( distance < 0.00025 && station.marker.equals("danger")  ) {
 					continue;
 				}
@@ -71,29 +71,32 @@ public class StatelessDrone extends Drone {
 	*/
 	
 	//returns a random direction to move in given the legal moves the drone can make
-    private Direction randomDirection(ArrayList<Direction> legalMoves) {
-		int range = legalMoves.size() - 1;
-		return legalMoves.get(this.rnd.nextInt(range));
+    private Direction randomDirection(ArrayList<Direction> legalDirections) {                      
+		int range = legalDirections.size() - 1;
+		return legalDirections.get(this.rnd.nextInt(range));
 		
 	}
 	
 	
 	//returns a list of all the stations in range of the moves the drone can make from its current position
-	private ArrayList<Station> findStationsInRange(ArrayList<Station> mapCopy, ArrayList<Direction> legalMoves){
+    //using list so it fits on the line in the report 
+	private ArrayList<Station> stationsInRange(List<Station> map, List<Direction> directions){
 		
 		ArrayList<Station> stationsInRange = new ArrayList<Station>();
 		final double RANGE = 0.00025; // aoe of each station 
 		
-		for (Direction move : legalMoves) {
-			Position nextPos = this.position.nextPosition(move);
+		for (Direction move : directions) {
+			Position nextPos = this.getPosition().nextPosition(move);
 			
-			Iterator<Station> iter = mapCopy.iterator();
+			Iterator<Station> iter = map.iterator();
 			
 			while(iter.hasNext()) {
 				Station station = iter.next();
-				double distance = distance(nextPos, station.position);
+				double distance = distance(nextPos, station.getPosition());
 		
-				if (distance < RANGE && (station.marker.equals("danger") ==  false) && (station.getScore() > 0)) {
+				if (distance < RANGE && (station.getMarker().equals("danger")==false)
+						&& (station.getScore()>0)){
+					
 					stationsInRange.add(station);
 					
 				}
