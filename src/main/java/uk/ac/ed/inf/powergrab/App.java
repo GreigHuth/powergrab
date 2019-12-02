@@ -42,8 +42,8 @@ public class App {
 		String mapSource = getMapSource(d,m,y);	
 		FeatureCollection mapJson = FeatureCollection.fromJson(mapSource);
 		
-		List<Feature> features = mapJson.features(); // list of features that will be written to the json
-		ArrayList<Station> allStations = new ArrayList<Station>(); //list of all the stations in the game
+		List<Feature> features = mapJson.features();
+		ArrayList<Station> allStations = new ArrayList<Station>(); 
 		allStations = unpackFeatures(features);
 		
 		Drone drone = initDrone(startPos, seed, version, allStations);	
@@ -90,19 +90,24 @@ public class App {
 			//update drones position and 
 			drone.setPosition(drone.getPosition().nextPosition(nextMove));
 			Position nextPos = drone.getPosition();
+			
+			moves--;
+			power -= 1.25;
 		
 			
 			//-----CHARGING BLOCK-----
 			//when a drone charges from a station it drains the station of its coins and power
-			Station chargeStation = getStationToChargeFrom(drone.getPosition(), allStations);
+			Station chargeStation = getChargeStation(drone.getPosition(), allStations);
 			
 			// if there is a nearest station to charge from, charge from it and update the map
 			if (chargeStation.getId().equals("") == false) {
 				
-				// if the station the drone is charging from is the target of the stateful drone, then remove it 
-				// from the list of stations to visit
-				if (chargeStation == destination) {
-					((StatefulDrone) drone).getOrderedStations().remove(destination);
+				// if the station the drone is charging from is one of the targets of the stateful 
+				//      drone, then remove it  from the list of stations to visit
+				if (drone instanceof StatefulDrone) {
+					if (((StatefulDrone) drone).getOrderedStations().contains(chargeStation)) {
+						((StatefulDrone) drone).getOrderedStations().remove(destination);
+					}
 				}
 				
 				coins += chargeStation.getCoins();
@@ -128,16 +133,16 @@ public class App {
 			
 			
 			//some stuff to help debug
-			System.out.println("moves left:" + moves);
-			System.out.println(txtOutput.get(250-moves));
+			System.out.println("move number:" + (250-moves));
+			System.out.println(txtOutput.get(250-(moves+1)));
 			System.out.println();
 			
 			
-			moves--;
-			power -= 1.25;
+			
+			
 		
 		}
-		//---------------END OF MAIN LOOP ----------------------
+		//---------------END OF GAME LOOP ----------------------
 		
 		//messages to confirm game is finished
 		System.out.println("PowerGrab Complete!");
@@ -158,8 +163,6 @@ public class App {
 		writer.write(jsonString);
 		writer.close();
 		
-		System.out.println(jsonString);
-		//Files.write(jsonFile, (String)jsonString, Charset.defaultCharset());
 		Files.write(txtFile,txtOutput, Charset.defaultCharset());
 		
 		System.out.println("Output files created, check the source folder.");
@@ -168,10 +171,10 @@ public class App {
 	
 	
 	//returns a new map with the given stations "coins" and "power" attributes updated
-	public static ArrayList<Station> updateMap (Station chargeStation, ArrayList<Station> allStations){
+	public static ArrayList<Station> updateMap (Station charge, ArrayList<Station> allStations){
 		
 		for (Station station : allStations) {
-			if (station.getId().equals(chargeStation.getId())) {
+			if (station.getId().equals(charge.getId())) {
 				station.setPower(0);
 				station.setCoins(0);
 			}
@@ -181,9 +184,9 @@ public class App {
 	
 	
 	// if the given position is in range of any stations, it charges from the closest one, else it returns a dummy value
-	public static Station getStationToChargeFrom(Position dronePos, ArrayList<Station> allStations){
+	public static Station getChargeStation(Position dronePos, ArrayList<Station> allStations){
 		
-	    double stationRange = 0.00025;// aoe of the charging stations
+	    final double RANGE = 0.00025;// aoe of the charging stations
 	    
 	    Position dummy = new Position (100,100);
 	    Station closest = new Station("", dummy, 0, 0, "");
@@ -194,7 +197,7 @@ public class App {
 	    	
 	    	double currentDist = distance(dronePos, closest.getPosition());
 	    	
-	    	if ( nextDist < stationRange && nextDist < currentDist) {
+	    	if ( nextDist < RANGE && nextDist < currentDist) {
 	    		closest = current;
 	    	}
 	    }    
@@ -246,9 +249,12 @@ public class App {
     
     //returns a new feature representing a line between the given points
 	public static Feature makeLine(Position currPos, Position nextPos) {
-		List<Point> linePoints = new ArrayList<Point>(); //initialise structure to contain the points to draw the line on the geojson
+		
+		List<Point> linePoints = new ArrayList<Point>(); 
+		
 		linePoints.add(Point.fromLngLat(currPos.getLongitude(), currPos.getLatitude()));
-		linePoints.add(Point.fromLngLat(nextPos.getLongitude(), nextPos.getLatitude()));		
+		linePoints.add(Point.fromLngLat(nextPos.getLongitude(), nextPos.getLatitude()));	
+		
 		Feature newLine = Feature.fromGeometry(LineString.fromLngLats(linePoints));
 		
 		return newLine;
@@ -256,12 +262,12 @@ public class App {
 	
 	
 	//returns an initialised drone based on what version the game is to run (stateless or stateful)
-	public static Drone initDrone(Position startPos, int seed, String version, ArrayList<Station> allStations) {
+	public static Drone initDrone(Position start,int seed,String v,ArrayList<Station> allStations){
 		Drone drone;
-		if (version.equals("stateless")) { 
-			drone = new StatelessDrone(startPos, seed);
+		if (v.equals("stateless")) { 
+			drone = new StatelessDrone(start, seed);
 		}else {
-		    drone = new StatefulDrone(startPos, allStations);
+		    drone = new StatefulDrone(start, allStations);
 		}
 		
 		return drone;
@@ -269,7 +275,7 @@ public class App {
 	
 	
 	// fetches the geo-json file from the webserver and then returns it as a string
-	public static String getMapSource(String d,String m, String y) throws MalformedURLException, IOException {
+	public static String getMapSource(String d,String m,String y) throws MalformedURLException,IOException{
 	    String mapString = "http://www.homepages.inf.ed.ac.uk/stg/powergrab/"
 	    						+y+"/"+m+"/"+d+"/powergrabmap.geojson";
         

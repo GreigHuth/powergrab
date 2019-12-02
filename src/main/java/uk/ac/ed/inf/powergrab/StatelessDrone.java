@@ -5,12 +5,15 @@ package uk.ac.ed.inf.powergrab;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
+import java.util.Random;
 
 public class StatelessDrone extends Drone {
+	
+	private final Random rnd; 
 
 	public StatelessDrone(Position position, int seed) {
-		super(position, seed);
+		super(position);
+		this.rnd = new Random(seed);
 	}
 
 	public Direction calculateDirection(ArrayList<Station> stations){
@@ -24,6 +27,7 @@ public class StatelessDrone extends Drone {
 		
 		// if there aren't any stations in range then pick a random direction to move in
 		if (stationsInRange.isEmpty()) {
+			
 			chosenMove = randomDirection(legalDirections);	
 		} 
 		

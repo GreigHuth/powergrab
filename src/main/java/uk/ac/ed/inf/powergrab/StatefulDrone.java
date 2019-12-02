@@ -1,6 +1,7 @@
 package uk.ac.ed.inf.powergrab;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class StatefulDrone extends Drone {
 	
@@ -10,12 +11,13 @@ public class StatefulDrone extends Drone {
 	
 	
 	public StatefulDrone(Position position, ArrayList<Station> stations) {
-		super (position, 0);
+		super (position);
 		seperateStations(stations);
 		sortStations();
 	}
 	
-	//TODO need to get perfect on 03/03 and 09/09 
+	//TODO need to get perfect on 09/09 
+	//there is an issue with danger stations being 
 	
 	//decides which direction to go in
 	public Direction decideDirection(Station destination){
@@ -29,6 +31,25 @@ public class StatefulDrone extends Drone {
 		
 		for (Direction move : orderedMoves) {
 			//if the closest move is in range of a bad station then try the next closest one
+			/*
+			Position nextPos = this.getPosition().nextPosition(move);
+			StatefulDrone lookahead = new StatefulDrone(nextPos, orderedStations);
+			ArrayList<Direction> nextDirs = lookahead.sortDirections(legalDirections(), destination);
+			
+			Iterator<Direction> iter = nextDirs.listIterator();
+			
+			while (iter.hasNext()){
+				if (inDanger(iter.next(),destination)) {
+					iter.remove();
+				}
+			}
+			Position nextNextPos = lookahead.getPosition().nextPosition(nextDirs.get(0));
+			
+			
+			if(this.getPosition().equals(nextNextPos)) {
+				continue;
+			}
+			*/
 			if(inDanger(move, destination)) {
 				continue;
 				
@@ -118,8 +139,9 @@ public class StatefulDrone extends Drone {
 		return orderedMoves;
 	}
 	
+	
 	//if the given direction results in a move that is in range of any bad stations, then return true
-	private boolean inDanger(Direction chosenDirection, Station destination) {
+	private boolean inDanger(Direction chosenDirection, Station destination){
 		
 		boolean inRange = false;
 		
@@ -152,12 +174,12 @@ public class StatefulDrone extends Drone {
 	}
 
 	
+	
 	// -----GETTERS AND SETTERS-----
 	public ArrayList<Station> getGoodStations() {
 		return goodStations;
 	}
 	
-
 	public void setGoodStations(ArrayList<Station> goodStations) {
 		this.goodStations = goodStations;
 	}

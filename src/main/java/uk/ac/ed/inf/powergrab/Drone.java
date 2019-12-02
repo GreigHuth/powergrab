@@ -7,45 +7,19 @@ import java.util.Random;
 import org.javatuples.Pair;
 
 public class Drone {
-	private final ArrayList<Direction> directions = new ArrayList<Direction>();
 	private Position position;
-	public final Random rnd ; 
-	private final int seed;
-
-	
 	
 	// constructor both drones use this constructor
-	public Drone(Position position, int seed) {
-		this.rnd = new Random(this.seed);
+	public Drone(Position position) {
 		this.setPosition(position);
-		this.seed = seed;
-		
-		//when the drone is initialised add all the directions to the attribute
-		directions.add(Direction.N);
-		directions.add(Direction.NNE);
-		directions.add(Direction.NE);
-		directions.add(Direction.ENE);
-		directions.add(Direction.E);
-		directions.add(Direction.ESE);
-		directions.add(Direction.SE);
-		directions.add(Direction.SSE);
-		directions.add(Direction.S);
-		directions.add(Direction.SSW);
-		directions.add(Direction.SW);
-		directions.add(Direction.WSW);
-		directions.add(Direction.W);
-		directions.add(Direction.WNW);
-		directions.add(Direction.NW);
-		directions.add(Direction.NNW);
-
 	}
 
-	// returns a list of all the moves that are legal (within the play area) from the drones current position
+	// returns a list of all the moves that are within the play area from the drones current position
     public ArrayList<Direction> legalDirections(){
     
         ArrayList<Direction> legalMoves = new ArrayList<Direction>();
         
-        for (Direction direction : this.directions) {	
+        for (Direction direction :Direction.values()) {	
 		    if (this.getPosition().nextPosition(direction).inPlayArea()) {
 				legalMoves.add(direction);
 			}
