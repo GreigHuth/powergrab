@@ -47,6 +47,16 @@ public class Position {
         }
 		
 	}
+	
+	
+	public boolean equals(Position pos) {
+	
+		if(this.getLatitude() == pos.getLatitude() && this.getLongitude() == pos.getLongitude()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 	public double getLatitude() {
 		return latitude;

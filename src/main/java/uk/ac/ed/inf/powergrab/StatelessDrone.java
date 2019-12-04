@@ -24,6 +24,7 @@ public class StatelessDrone extends Drone {
 		ArrayList<Direction> legalDirections = legalDirections();
 		ArrayList<Station> stationsInRange = stationsInRange(stations, legalDirections);
 		
+		//TODO consider fixing this
 		
 		// if there aren't any stations in range then pick a random direction to move in
 		if (stationsInRange.isEmpty()) {
@@ -39,6 +40,12 @@ public class StatelessDrone extends Drone {
 			
 			//finds the best station
 			for (Station station : stationsInRange) {
+				
+				//don't consider moving towards bad stations
+				if(station.getMarker().equals("danger")) {
+					continue;
+				}
+				
 				if (station.getScore() > bestStation.getScore()) {
 					bestStation = station;
 				}
@@ -51,28 +58,6 @@ public class StatelessDrone extends Drone {
 
 	}
 	
-	
-	//TODO get this method to work. the drone sucks without it
-	/*
-	private Direction randomDirection(ArrayList<Direction> legalDirections, ArrayList<Station> stationsInRange) {
-		
-		Direction chosenMove = null;
-		
-		while (chosenMove ==  null) {
-			//randomly picks a legal move to make
-			Direction nextMove = legalDirections.get(this.rnd.nextInt(legalDirections.size()-1));
-			for (Station station : stationsInRange) {
-				double distance = distance(this.getPosition().nextPosition(nextMove),station.position);
-				if ( distance < 0.00025 && station.marker.equals("danger")  ) {
-					continue;
-				}
-				chosenMove = nextMove;
-			}
-		}
-		return chosenMove;
-		
-	}
-	*/
 	
 	//returns a random direction to move in given the legal moves the drone can make
     private Direction randomDirection(ArrayList<Direction> legalDirections) {                      
@@ -94,12 +79,12 @@ public class StatelessDrone extends Drone {
 			
 			Iterator<Station> iter = map.iterator();
 			
+			
 			while(iter.hasNext()) {
 				Station station = iter.next();
 				double distance = distance(nextPos, station.getPosition());
 		
-				if (distance < RANGE && (station.getMarker().equals("danger")==false)
-						&& (station.getScore()>0)){
+				if (distance < RANGE && (station.getScore()>0)){
 					
 					stationsInRange.add(station);
 					

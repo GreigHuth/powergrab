@@ -77,7 +77,7 @@ public class App {
 				//	forth to avoid danger
 				if (((StatefulDrone) drone).getOrderedStations().isEmpty()) {
 					
-					destination = new Station (null,currentPos,0,0,null);
+					destination = new Station (null,startPos,0,0,null);
 					
 				} else {
 					
@@ -133,9 +133,9 @@ public class App {
 			
 			
 			//some stuff to help debug
-			System.out.println("move number:" + (250-moves));
-			System.out.println(txtOutput.get(250-(moves+1)));
-			System.out.println();
+			//System.out.println("move number:" + (250-moves));
+			//System.out.println(txtOutput.get(250-(moves+1)));
+			//System.out.println();
 			
 			
 			
@@ -143,10 +143,15 @@ public class App {
 		
 		}
 		//---------------END OF GAME LOOP ----------------------
+		if (moves == 0)
+		{
+			System.out.println("The drone has ran out of moves.");
+		} else if(power < 1.25) {
+			System.out.println("Drone has ran out of power.");
+		}
+		System.out.println("Game over.");
 		
-		//messages to confirm game is finished
-		System.out.println("PowerGrab Complete!");
-		System.out.println("Creating output files...");
+		
 		
 		
 		
@@ -165,7 +170,6 @@ public class App {
 		
 		Files.write(txtFile,txtOutput, Charset.defaultCharset());
 		
-		System.out.println("Output files created, check the source folder.");
 	}
 
 	
@@ -191,13 +195,12 @@ public class App {
 	    Position dummy = new Position (100,100);
 	    Station closest = new Station("", dummy, 0, 0, "");
 	    
-	    for (Station current : allStations) {
-	    	
-	    	double nextDist = distance(dronePos, current.getPosition());
-	    	
+	    //finds the closest station
+	    for (Station current : allStations) {	
+	    	double nextDist = distance(dronePos, current.getPosition());    	
 	    	double currentDist = distance(dronePos, closest.getPosition());
 	    	
-	    	if ( nextDist < RANGE && nextDist < currentDist) {
+	    	if ( nextDist <= RANGE && nextDist < currentDist) {
 	    		closest = current;
 	    	}
 	    }    

@@ -8,6 +8,7 @@ public class StatefulDrone extends Drone {
 	private ArrayList<Station> goodStations = new ArrayList<Station>();
 	private ArrayList<Station> badStations= new ArrayList<Station>();
 	private ArrayList<Station> orderedStations= new ArrayList<Station>();
+	private ArrayList<Position> alreadyVisited = new ArrayList<Position>();
 	
 	
 	public StatefulDrone(Position position, ArrayList<Station> stations) {
@@ -20,40 +21,38 @@ public class StatefulDrone extends Drone {
 	//there is an issue with danger stations being 
 	
 	//decides which direction to go in
-	public Direction decideDirection(Station destination){
+	public Direction decideDirection(Station destination) {
+		
+		alreadyVisited.add(this.getPosition());
 		
 		ArrayList<Direction> legalMoves = legalDirections();
 		
-		ArrayList<Direction> orderedMoves = sortDirections(legalMoves, destination);
+		ArrayList<Direction> sortedMoves = sortDirections(legalMoves, destination);
 		
 		Direction chosenMove = null;
 		
 		
-		for (Direction move : orderedMoves) {
+		for (Direction move : sortedMoves) {
 			//if the closest move is in range of a bad station then try the next closest one
-			/*
-			Position nextPos = this.getPosition().nextPosition(move);
-			StatefulDrone lookahead = new StatefulDrone(nextPos, orderedStations);
-			ArrayList<Direction> nextDirs = lookahead.sortDirections(legalDirections(), destination);
 			
-			Iterator<Direction> iter = nextDirs.listIterator();
-			
-			while (iter.hasNext()){
-				if (inDanger(iter.next(),destination)) {
-					iter.remove();
+			// if the drone is trying t mo
+			Boolean seen = false;
+			for (Position pos : alreadyVisited) {
+				if (this.getPosition().nextPosition(move).equals(pos)) {
+					seen = true;
 				}
 			}
-			Position nextNextPos = lookahead.getPosition().nextPosition(nextDirs.get(0));
 			
-			
-			if(this.getPosition().equals(nextNextPos)) {
+			if (seen == true) {
 				continue;
 			}
-			*/
+			
 			if(inDanger(move, destination)) {
 				continue;
 				
-			} else {
+			} 
+			
+			else {
 				
 				chosenMove = move;
 				break;
@@ -63,7 +62,7 @@ public class StatefulDrone extends Drone {
 		
 		// if all the above moves are in the range of a bad station then pick the original closest one
 		if (chosenMove == null) {
-			chosenMove = orderedMoves.get(0);
+			chosenMove = sortedMoves.get(0);
 		}
 		
 		return chosenMove;

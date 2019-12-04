@@ -2,7 +2,6 @@ package uk.ac.ed.inf.powergrab;
 
 import java.lang.Math;
 import java.util.ArrayList;
-import java.util.Random;
 
 import org.javatuples.Pair;
 
