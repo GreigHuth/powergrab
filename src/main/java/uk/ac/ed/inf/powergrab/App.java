@@ -77,7 +77,8 @@ public class App {
 				//	forth to avoid danger
 				if (((StatefulDrone) drone).getOrderedStations().isEmpty()) {
 					
-					destination = new Station (null,startPos,0,0,null);
+					//TODO
+					destination = new Station (null,currentPos,0,0,null);
 					
 				} else {
 					
