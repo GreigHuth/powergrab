@@ -33,22 +33,23 @@ public class App {
 	    Position startPos = new Position(lat, lon);
 		int seed = Integer.parseInt(args[5]);
 		String version = args[6];
-		
-		
-	   
+
+
+
 		List<String> txtOutput = new ArrayList<String>(); //prepare txt output container
-		
+
 		//get map data from web-server
 		String mapSource = getMapSource(d,m,y);	
 		FeatureCollection mapJson = FeatureCollection.fromJson(mapSource);
-		
+
 		List<Feature> features = mapJson.features();
 		ArrayList<Station> allStations = new ArrayList<Station>(); 
 		allStations = unpackFeatures(features);
-		
+
+		//initialise the drone, if this is the stateful one, it also precalculates all the movement
 		Drone drone = initDrone(startPos, seed, version, allStations);	
-		
-		
+
+
 		//initialise critical variables for the game
 	    int  moves = 250;
 	    double coins = 0;
@@ -64,34 +65,35 @@ public class App {
 			Position currentPos = drone.getPosition();
 			Direction nextMove = null;
 			
-			//-----STATELESS DRONE ------
+			//----- STATELESS DRONE ------
 			if (drone instanceof StatelessDrone) {
 				nextMove = ((StatelessDrone) drone).calculateDirection(allStations);
 			}
 			
 			
-			//-----STATEFUL DRONE -----
+			//----- STATEFUL DRONE -----
 			else {
 				
 				//if the drone has already visited all the stations then it just goes back and 
 				//	forth to avoid danger
 				if (((StatefulDrone) drone).getOrderedStations().isEmpty()) {
 					
-					//TODO
 					destination = new Station (null,currentPos,0,0,null);
 					
 				} else {
-					
+					//get next station in the list
 					destination = ((StatefulDrone) drone).getOrderedStations().get(0);			    
 				}
-	
+				//work out closest move to given destination
 				nextMove = ((StatefulDrone) drone).decideDirection(destination);			
 			}
 			
-			//update drones position and 
+			//update drones position
 			drone.setPosition(drone.getPosition().nextPosition(nextMove));
-			Position nextPos = drone.getPosition();
 			
+			Position nextPos = drone.getPosition();//store drone position here to use later, for neatness
+			
+			//power and moves gets depleted after every turn
 			moves--;
 			power -= 1.25;
 		
