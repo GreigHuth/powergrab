@@ -33,19 +33,19 @@ public class App {
 	    Position startPos = new Position(lat, lon);
 		int seed = Integer.parseInt(args[5]);
 		String version = args[6];
-
-
-
+	
+	
+	
 		List<String> txtOutput = new ArrayList<String>(); //prepare txt output container
-
+	
 		//get map data from web-server
 		String mapSource = getMapSource(d,m,y);	
 		FeatureCollection mapJson = FeatureCollection.fromJson(mapSource);
-
+	
 		List<Feature> features = mapJson.features();
 		ArrayList<Station> allStations = new ArrayList<Station>(); 
 		allStations = unpackFeatures(features);
-
+	
 		//initialise the drone, if this is the stateful one, it also precalculates all the movement
 		Drone drone = initDrone(startPos, seed, version, allStations);	
 
