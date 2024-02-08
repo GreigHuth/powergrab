@@ -1,6 +1,9 @@
-Overview:
+# Powergrab - A Drone Simulator
 
-Powergrab was a 3rd year university project where I was tasked with programming a drone simulator. I used Java to implement the algorithms for two drones, a stateful one and a stateless one. The aim was to program drones to “fly” around a GeoJson map downloaded from a server and collect points from all of the good stations without touching any the bad stations and before the drone runs out of power. Every move the drone could make cost power and the drone was only allowed to make a maximum of 250 moves. The path the drone takes was not important, only its ability to path around bad stations while ensuring it touched all the good ones. The problem, while simple, allowed for a lot of differnet approaches and experimentation which overall made it one of my favourite courseworks at university.
+
+## Overview:
+
+Powergrab was a 3rd year university project where I was tasked with programming a drone simulator. I used Java to implement the algorithms for two drones, a stateful one and a stateless one. The aim was to program drones to “fly” around a GeoJson map downloaded from a server and collect points from all of the good stations without touching any the bad stations and before the drone runs out of power. Every move the drone could make cost power and the drone was only allowed to make a maximum of 250 moves. The path the drone takes was not important, only its ability to path around bad stations while ensuring it touched all the good ones. The problem, while simple, allowed for a lot of differnet approaches and experimentation which overall made it one of my favourite courseworks at university. For this coursework i was awarded a mark of 89/100 with the strongest parts of my submission being my efficient and clean code and my concise report.
 
 You can see the path it takes here.
 
@@ -9,7 +12,8 @@ The whole project was implemented from scratch, I was given no boilerplate and l
 As well as the code I was required to produce a comprehensive report detailing our implementation, you can have a look here.
 
 For this coursework i was awarded 89/100 with the strongest parts of my submission being my efficient and clean code as well as my detailed and concise report.
-How it works:
+
+## How it works:
 
 The drones inherited standard functions from a Drone interface, outlining some basic functions of each of the drones, such as calculating legal moves and initialising the position.
 
@@ -22,7 +26,8 @@ After a move has been completed, the game then checks if the drone is in range o
 After the game is over it generates text detailing all the moves made and an annotated GeoJson map showing the path taken by the drone.
 
 By the end of the project my drone was able to get a perfect score on all of the provided maps.
-What i Learned
+
+## What i Learned:
 
 This was the first piece of coursework i was given that had no boilerplate code, all students had to start from scratch, this was an intimidating prospect at the time but i quickly got started and began to appreciete the open-endedness of the task.
 
