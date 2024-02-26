@@ -17,8 +17,6 @@ public class StatefulDrone extends Drone {
 		sortStations();
 	}
 	
-	//TODO need to get perfect on 09/09 
-	//there is an issue with danger stations being 
 	
 	//decides which direction to go in
 	public Direction decideDirection(Station destination) {
@@ -31,31 +29,32 @@ public class StatefulDrone extends Drone {
 		
 		Direction chosenMove = null;
 		
-		
+
+		//iterate through all possible mvoves to decide best one
 		for (Direction move : sortedMoves) {
-			//if the closest move is in range of a bad station then try the next closest one
 			
-			// if the drone is trying t mo
+			
 			Boolean seen = false;
+			
 			for (Position pos : alreadyVisited) {
 				if (this.getPosition().nextPosition(move).equals(pos)) {
 					seen = true;
 				}
 			}
-			
+
+			//ignore moving back to where youve already been, this avoids loops
 			if (seen == true) {
 				continue;
 			}
-			
+
+			//if the closest move is in range of a bad station then try the next closest one
 			if(inDanger(move, destination)) {
 				continue;
 				
-			} 
-			
-			else {
+			}else {
 				
-				chosenMove = move;
-				break;
+			    chosenMove = move;
+			    break;
 				
 			}
 		}
