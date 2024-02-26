@@ -32,19 +32,12 @@ public class StatefulDrone extends Drone {
 
 		//iterate through all possible mvoves to decide best one
 		for (Direction move : sortedMoves) {
-			
-			
-			Boolean seen = false;
-			
+
+			//avoid looping
 			for (Position pos : alreadyVisited) {
 				if (this.getPosition().nextPosition(move).equals(pos)) {
-					seen = true;
+					continue;
 				}
-			}
-
-			//ignore moving back to where youve already been, this avoids loops
-			if (seen == true) {
-				continue;
 			}
 
 			//if the closest move is in range of a bad station then try the next closest one
