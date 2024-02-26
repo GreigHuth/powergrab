@@ -18,7 +18,7 @@ import com.mapbox.geojson.LineString;
 
 public class App {
    	
-//main class for the project, where stuff is actually run
+//main class for the project
 	
 	public static void main (String args[]) throws MalformedURLException, IOException {
 		
